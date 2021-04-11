@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class IDE:
+class IDE: # { Intergrated Development Environment : IDE }
 
     def __init__(self, **kwargs):
 

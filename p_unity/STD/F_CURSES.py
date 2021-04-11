@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { The CURSES Text Interface : words }
+class LIB: # { CURSES Text Interface : words }
 
     def __init__(self, **kwargs):
         self.c = None

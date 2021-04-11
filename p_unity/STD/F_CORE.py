@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { The CORE FORTH : words }
+class LIB: # { CORE FORTH : words }
 
     """
 

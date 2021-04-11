@@ -29,7 +29,7 @@ class LIB: # { The Object ABI : words }
 
     @staticmethod ### LEN ###
     def word_LEN__R_x_n(f, x):
-        "T{ 'Hello'World' LEN -> 'Hello'World' 11 }T"
+        "T{ 'Hello'World' LEN NIP -> 11 }T"
         return (x, len(x),)
 
     @staticmethod ### ~ ###

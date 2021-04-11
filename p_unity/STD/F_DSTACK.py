@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { DATA Stack : words }
+class LIB: # { DATA Stack Manipulation : words }
 
     def __init__(self, **kwargs):
         pass

@@ -54,6 +54,8 @@ class LIB: # { Testing, TESTING, 123 : words }
             f.TEST.p_count += 1
         else:
             f.TEST.f_count += 1
+            need = repr(need)
+            have = repr(have)
             print(f"INCORRECT RESULT: {need} ~= {have}")
         f.stack = f.__test
 

@@ -22,12 +22,13 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { Mathamitcal : words }
+class LIB: # { Mathematical : words }
 
     """
 
-    T{ 0.1 0.2 + -> 0.3 }T # WOO HOO!
-    T{ 1.1 2.2 + -> 3.3 }T # WOO HOO!
+    T{ 0.1 0.2 + -> 0.3 }T # Simple it seems; yet complex it is
+
+    T{ 1.1 SQRT DUP * -> 1.1 }T # WOO HOO!
 
     T{ 1+0j 2+0j + -> 3+0j }T
     T{ 1+0j 2+1j + -> 3+1j }T

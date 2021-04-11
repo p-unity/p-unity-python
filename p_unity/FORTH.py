@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class Engine:
+class Engine: # { The Reference Implementation of : p-unity }
 
     def __init__(self, **kwargs):
 
@@ -115,10 +115,6 @@ class Engine:
         names = dir(source)
         names.sort()
 
-        if 'P_UNITY' in names:
-            constructor = getattr(source, 'P_UNITY')
-            constructor(self)
-
         for fname in names:
             parts = fname.split('_')
             if len(parts) < 2 or not parts[0][:4] == 'word':
@@ -193,30 +189,19 @@ class Engine:
 
 
     def to_number(self, token):
+        base = 10
         if token[0] == '#':
             token = token[1:]
         elif token[0] == '$':
+            base = 16
             token = token[1:]
-            is_integer = True
-            if '.' in token:
-                is_integer = False
-                token = token.split('.')[0]
-            if is_integer:
-                return (True, int(token, 16))
-            else:
-                return (True, Decimal(int(token,16)))
         elif token[0] == '%':
+            base = 2
             token = token[1:]
-            is_integer = True
-            if '.' in token:
-                is_integer = False
-                token = token.split('.')[0]
-            if is_integer:
-                return (True, int(token, 2))
-            else:
-                return (True, Decimal(int(token,2)))
 
-        if token[0] == '-' and len(token) > 1:
+        if token[0] == '-':
+            if len(token) == 1:
+                return (False, None)
             if not token[1].isdigit():
                 return (False, None)
 
@@ -224,9 +209,12 @@ class Engine:
             return (True, complex(token))
         else:
             if '.' in token:
-                return (True, Decimal(token))
+                if base == 10:
+                    return (True, Decimal(token))
+                else:
+                    return (True, Decimal(int(token, base)))
             else:
-                return (True, int(token))
+                return (True, int(token, base))
         return (False, None)
 
     def INTERPRET(self, token):
