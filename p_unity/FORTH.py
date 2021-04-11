@@ -24,7 +24,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class Engine:
 
-    def __init__(self, autoexec=None):
+    def __init__(self, **kwargs):
 
         self.g = {}
 
@@ -61,34 +61,35 @@ class Engine:
 
         self.__core__()
 
-        self.TEST = F_TEST.P_UNITY()
+        self.TEST = F_TEST.LIB(**kwargs)
         self.add_words(self.TEST)
 
-        self.DSTACK = F_DSTACK.P_UNITY()
+        self.DSTACK = F_DSTACK.LIB(**kwargs)
         self.add_words(self.DSTACK)
 
-        self.CORE = F_CORE.P_UNITY()
+        self.CORE = F_CORE.LIB(**kwargs)
         self.add_words(self.CORE)
 
-        self.REPL = F_REPL.P_UNITY()
+        self.REPL = F_REPL.LIB(**kwargs)
         self.add_words(self.REPL)
 
-        self.MATH = F_MATH.FORTH()
+        self.MATH = F_MATH.LIB(**kwargs)
         self.add_words(self.MATH)
 
-        self.OBJECT = F_OBJECT.P_UNITY()
+        self.OBJECT = F_OBJECT.LIB(**kwargs)
         self.add_words(self.OBJECT)
 
-        self.JSON = F_JSON.P_UNITY()
+        self.JSON = F_JSON.LIB(**kwargs)
         self.add_words(self.JSON)
 
-        self.CURSES = F_CURSES.P_UNITY()
+        self.CURSES = F_CURSES.LIB(**kwargs)
         self.add_words(self.CURSES)
 
         for line in __smoke_0__.split('\n'):
             self.execute(line.split())
 
-        if autoexec:
+        if 'autoexec' in kwargs:
+            autoexec = kwargs['autoexec']
             for line in autoexec.split('\n'):
                 self.execute(line.split())
 
@@ -531,16 +532,16 @@ import dis, copy, collections, simplejson
 
 from decimal import Decimal
 
-from . import F_TEST
+from .STD import F_TEST
 
-from . import F_DSTACK
+from .STD import F_DSTACK
 
-from . import F_CORE, F_REPL
+from .STD import F_CORE, F_REPL
 
-from . import F_MATH
+from .STD import F_MATH
 
-from . import F_OBJECT
+from .STD import F_OBJECT
 
-from . import F_CURSES
+from .STD import F_CURSES
 
-from . import F_JSON
+from .STD import F_JSON

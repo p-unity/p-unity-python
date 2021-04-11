@@ -22,9 +22,9 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { JavaScript Object Notation : words }
+class LIB: # { JavaScript Object Notation : words }
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### JSON:SAVE ###

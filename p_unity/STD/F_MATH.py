@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class FORTH: # { Mathamitcal : words }
+class LIB: # { Mathamitcal : words }
 
     """
 
@@ -34,7 +34,7 @@ class FORTH: # { Mathamitcal : words }
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### + ###

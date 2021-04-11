@@ -22,15 +22,16 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { The CURSES Text Interface : words }
+class LIB: # { The CURSES Text Interface : words }
 
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        self.c = None
+        if 'stdscr' in kwargs:
+            self.c = kwargs['stdscr']
 
     @staticmethod ### CURSES ###
     def word_CURSES(f):
-        if not 's' in dir(f.CURSES):
-            f.CURSES.s = Cursed()
+        pass
 
     @staticmethod ### KEY-MAP ###
     def word_KEY_minus_MAP__R_x(f):
@@ -38,7 +39,8 @@ class P_UNITY: # { The CURSES Text Interface : words }
 
     @staticmethod ### WINDOW ###
     def word_WINDOW__R_x(f, n1, n2, n3, n4):
-        x = f.CURSES.s.new_win(orig=(n1, n2), size=(n3, n4))
+        global scr
+        x = scr.newwin(n3, n4, n1, n2)
         return (x,)
 
     @staticmethod ### BORDER ###
@@ -59,7 +61,7 @@ class P_UNITY: # { The CURSES Text Interface : words }
 
     @staticmethod ### GETKEY ###
     def word_GETKEY__R_x_s(f, x):
-        k = x.getkey()
+        k = x.getch()
         return (x,k)
 
     @staticmethod ### WRITE ###
@@ -75,9 +77,10 @@ class P_UNITY: # { The CURSES Text Interface : words }
 
     @staticmethod ### Z ###
     def word_Z(f):
-        if not 's' in dir(f.CURSES):
-            f.CURSES.s = Cursed()
-        with f.CURSES.s as scr:
+
+        from ezcurses import Cursed
+
+        with Cursed() as scr:
             win1 = scr.new_win(orig=(0, 0), size=(80, 20))
             win2 = scr.new_win(orig=(0, 20), size=(80, 4))
             win3 = scr.new_win(orig=(0, 24), size=(80, 1))

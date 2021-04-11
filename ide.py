@@ -21,8 +21,8 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-from p_unity.cli import IDE
 
-ide = IDE()
-ide.stdio()
+import p_unity.cli
+#p_unity.cli.ide_curses()
+p_unity.cli.ide_stdio()
 

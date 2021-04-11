@@ -22,9 +22,9 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { The Object ABI : words }
+class LIB: # { The Object ABI : words }
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### LEN ###

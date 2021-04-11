@@ -24,11 +24,38 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class IDE:
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
-        self.e = FORTH.Engine()
+        self.e = FORTH.Engine(**kwargs)
 
-    def stdio(self):
+        self.c = None
+        if 'stdscr' in kwargs:
+            self.c = kwargs['stdscr']
+
+
+    def run_curses(self):
+        #win1 = scr.new_win(orig=(0, 0), size=(80, 20))
+        #win2 = scr.new_win(orig=(0, 20), size=(80, 4))
+        #win3 = scr.new_win(orig=(0, 24), size=(80, 1))
+        dir(self.c)
+        win3 = self.c.newwin(0, 0, 80, 1)
+        #win1.border()
+        #win2.border()
+        #win1.background('+', color='red')
+        #win2.background('.', color=('green', 'blue'))
+        win3.background(' ', color=('green', 'red'))
+        #win1.refresh()
+        #win2.refresh()
+        win3.refresh()
+        s = win3.getstr((0, 0), echo=True)
+        #win2.write(s, (1, 1), color=('red', 'black'))
+        #win2.refresh()
+        #win1.write('Press q to quit', (1, 1), color=('black', 'red'))
+        #while win1.getkey() != 'q':
+        #    pass
+
+
+    def run_stdio(self):
 
         e = self.e
 
@@ -45,9 +72,9 @@ class IDE:
         e.word("STOP", lambda f: f.exit(f,1))
 
         print("")
-
-        p = e.TEST.p_count / (e.TEST.p_count + e.TEST.f_count)
-        print(f"p-unity FORTH v42.01 ({p*100}% Sanity Tests OK)")
+        p, f = e.TEST.p_count, e.TEST.f_count
+        print(f"p-unity FORTH v42.01 (Sanity Tests; {p} Pass, {f} Fail)")
+        print("")
 
         while e.running == -1:
 
@@ -72,7 +99,22 @@ class IDE:
         sys.exit(e.running)
 
 
-import sys
+def __ide_curses(stdscr):
+    ide = IDE(stdscr=stdscr)
+    ide.run_curses()
+    del ide
+
+def ide_curses():
+    wrapper(__ide_curses)
+
+def ide_stdio():
+    ide = IDE()
+    ide.run_stdio()
+    del ide
+
+import sys, curses
+
+from curses import wrapper
 
 from . import FORTH
 

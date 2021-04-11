@@ -22,9 +22,9 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { TEST : words }
+class LIB: # { Testing, TESTING, 123 : words }
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.p_count = 0
         self.f_count = 0
 

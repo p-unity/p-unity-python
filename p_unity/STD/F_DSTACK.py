@@ -22,9 +22,9 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { DATA Stack : words }
+class LIB: # { DATA Stack : words }
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### DUP ###

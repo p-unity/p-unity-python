@@ -22,9 +22,9 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { By the Power of Introspection : words }
+class LIB: # { By the Power of Introspection : words }
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### . ###
@@ -33,7 +33,7 @@ class P_UNITY: # { By the Power of Introspection : words }
 
     @staticmethod ### .. ###
     def word_dot_dot__R_x(f, x):
-        print(x)
+        print(f" {x}")
         return (x,)
 
     @staticmethod ### DIR ###

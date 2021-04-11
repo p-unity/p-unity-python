@@ -22,9 +22,15 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class P_UNITY: # { The CORE FORTH : words }
+class LIB: # { The CORE FORTH : words }
 
-    def __init__(self):
+    """
+
+    T{ -> }T
+
+    """
+
+    def __init__(self, **kwargs):
         pass
 
     @staticmethod ### WORDS ###
