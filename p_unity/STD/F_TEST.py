@@ -49,7 +49,6 @@ class LIB: # { Testing, TESTING, 123 : words }
     def word_rbrace_T(f):
         have = f.stack[len(f.__test):]
         need = f.__test_need
-        #ic(f.__test, have, need)
         if have == need:
             f.TEST.p_count += 1
         else:

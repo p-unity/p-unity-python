@@ -47,6 +47,9 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.stack = []
         self.state_names.append('stack')
 
+        self.cstack = []
+        self.state_names.append('cstack')
+
         self.minus_gt = 0
         self.state_names.append('minus_gt')
 
@@ -66,6 +69,9 @@ class Engine: # { The Reference Implementation of : p-unity }
 
         self.DSTACK = F_DSTACK.LIB(**kwargs)
         self.add_words(self.DSTACK)
+
+        self.CONTROL = F_CONTROL.LIB(**kwargs)
+        self.add_words(self.CONTROL)
 
         self.CORE = F_CORE.LIB(**kwargs)
         self.add_words(self.CORE)
@@ -215,7 +221,38 @@ class Engine: # { The Reference Implementation of : p-unity }
                     return (True, Decimal(int(token, base)))
             else:
                 return (True, int(token, base))
+
         return (False, None)
+
+    def IF(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "ELSE":
+            f.state = f.ELSE
+            return
+
+        if token_u == "THEN":
+            f.CONTROL.word_THEN__R(f)
+            f.state = f.INTERPRET
+            return
+
+        f.cstack[-1]["IF"].append(token)
+        f.state = f.IF
+
+    def ELSE(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "ELSE":
+            f.state = f.IF
+            return
+
+        if token_u == "THEN":
+            f.CONTROL.word_THEN__R(f)
+            f.state = f.INTERPRET
+            return
+
+        f.cstack[-1]["ELSE"].append(token)
+        f.state = f.ELSE
 
     def INTERPRET(self, token):
 
@@ -460,6 +497,7 @@ class Engine: # { The Reference Implementation of : p-unity }
             if isinstance(token, str) and len(token):
                 if token[0] in ["#", "\\"]:
                     break
+
             self.state(token)
 
         #except Exception as ex:
@@ -521,15 +559,9 @@ import dis, copy, collections, simplejson
 from decimal import Decimal
 
 from .STD import F_TEST
-
-from .STD import F_DSTACK
-
 from .STD import F_CORE, F_REPL
-
+from .STD import F_DSTACK, F_CONTROL
 from .STD import F_MATH
-
 from .STD import F_OBJECT
-
 from .STD import F_CURSES
-
 from .STD import F_JSON

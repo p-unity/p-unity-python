@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class IDE: # { Intergrated Development Environment : IDE }
+class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def __init__(self, **kwargs):
 
@@ -34,6 +34,9 @@ class IDE: # { Intergrated Development Environment : IDE }
 
 
     def run_curses(self):
+
+        from curses import wrapper
+
         #win1 = scr.new_win(orig=(0, 0), size=(80, 20))
         #win2 = scr.new_win(orig=(0, 20), size=(80, 4))
         #win3 = scr.new_win(orig=(0, 24), size=(80, 1))
@@ -56,6 +59,9 @@ class IDE: # { Intergrated Development Environment : IDE }
 
 
     def run_stdio(self):
+
+        from icecream import ic, install
+        install()
 
         e = self.e
 
@@ -112,9 +118,7 @@ def ide_stdio():
     ide.run_stdio()
     del ide
 
-import sys, curses
-
-from curses import wrapper
+import sys
 
 from . import FORTH
 
