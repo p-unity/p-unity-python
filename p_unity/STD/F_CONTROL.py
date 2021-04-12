@@ -26,14 +26,12 @@ class LIB: # { Control Flow : words }
 
     """
 
-    T{ : GI1 IF 123 THEN ; -> }T
-    T{ : GI2 IF 123 ELSE 234 THEN ; -> }T
-    T{  0 GI1 ->     }T
-    T{  1 GI1 -> 123 }T
-    T{ -1 GI1 -> 123 }T
-    T{  0 GI2 -> 234 }T
-    T{  1 GI2 -> 123 }T
-    T{ -1 GI1 -> 123 }T
+    T{  0 IF 123 THEN ->     }T
+    T{ -1 IF 123 THEN -> 123 }T
+    T{  1 IF 123 THEN -> 123 }T
+    T{ -1 IF 123 THEN -> 123 }T
+    T{  0 IF 123 ELSE 234 THEN -> 234 }T
+    T{  1 IF 123 ELSE 234 THEN -> 123 }T
 
     """
 
@@ -58,6 +56,34 @@ class LIB: # { Control Flow : words }
             f.execute(c["IF"])
         else:
             f.execute(c["ELSE"])
+
+    @staticmethod ### < ###
+    def word_langle__R_b(f, x1, x2):
+        return (x1 < x2,)
+
+    @staticmethod ### <= ###
+    def word_langle_equal__R_b(f, x1, x2):
+        return (x1 <= x2,)
+
+    @staticmethod ### > ###
+    def word_rangle__R_b(f, x1, x2):
+        return (x1 > x2,)
+
+    @staticmethod ### >= ###
+    def word_rangle_equal__R_b(f, x1, x2):
+        return (x1 >= x2,)
+
+    @staticmethod ### <> ###
+    def word_langle_rangle__R_b(f, x1, x2):
+        return (x1 != x2,)
+
+    @staticmethod ### ~= ###
+    def word_tilde_equal__R_b(f, x1, x2):
+        return (x1 != x2,)
+
+    @staticmethod ### != ###
+    def word_bang_equal__R_b(f, x1, x2):
+        return (x1 != x2,)
 
 
 from collections import namedtuple

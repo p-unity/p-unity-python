@@ -26,11 +26,6 @@ class LIB: # { Mathematical : words }
 
     """
 
-    T{ 0.1 0.2 + -> 0.3 }T # Simple it seems; yet complex it is
-
-    # T{ 1.1 SQRT DUP * -> 1.1 }T # WOO HOO!
-
-    T{ 1+0j 2+0j + -> 3+0j }T
     T{ 1+0j 2+1j + -> 3+1j }T
 
     """
@@ -40,12 +35,12 @@ class LIB: # { Mathematical : words }
 
     @staticmethod ### + ###
     def word_plus__R_n3(f, n1, n2):
-        ""
+        "T{ 0.1 0.2 + -> 0.3 }T # Simple it seems; yet complex it is"
         return (n1 + n2,)
 
     @staticmethod ### - ###
     def word_minus__R_n3(f, n1, n2):
-        ""
+        "T{ 1+0j 2+0j - -> -1+0j }T"
         return (n1 - n2,)
 
     @staticmethod ### * ###
@@ -78,23 +73,31 @@ class LIB: # { Mathematical : words }
         ""
         return (n1 % n2,)
 
+    @staticmethod ### ABS ###
+    def word_ABS__R_n2(f, n1):
+        """
+        T{ -2.3 ABS -> 2.3 }T T{ 5.55 ABS -> 5.55 }T
+        T{ 0 ABS -> 0 }T T{ 1 ABS -> 1 }T T{ -1 ABS -> 1 }T
+        """
+        return (abs(n1),)
+
     @staticmethod ### INVERT ###
     def word_INVERT__R_n2(f, n1):
         ""
         return (~n1,)
 
     @staticmethod ### NAN ###
-    def word_NAN(f):
+    def word_NAN__R_n(f):
         ""
         return (Decimal("Nan"),)
 
     @staticmethod ### INFINITY ###
-    def word_INFINITY(f):
+    def word_INFINITY__R_n(f):
         ""
         return (Decimal("Infinity"),)
 
     @staticmethod ### -INFINITY ###
-    def word_minus_INFINITY(f):
+    def word_minus_INFINITY__R_n(f):
         ""
         return (Decimal("-Infinity"),)
 

@@ -37,7 +37,7 @@ class LIB: # { The Object ABI : words }
         return (x, not x,)
 
     @staticmethod ### [[ ###
-    def word_lbracket_lbracket(f):
+    def word_lsquare_lsquare(f):
         f.__brace2 = len(f.stack)
         f.__colon2 = -1
 

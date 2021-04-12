@@ -79,6 +79,9 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.REPL = F_REPL.LIB(**kwargs)
         self.add_words(self.REPL)
 
+        self.IO = F_IO.LIB(**kwargs)
+        self.add_words(self.IO)
+
         self.MATH = F_MATH.LIB(**kwargs)
         self.add_words(self.MATH)
 
@@ -102,11 +105,11 @@ class Engine: # { The Reference Implementation of : p-unity }
     __word_map = {
 
             "colon":":", "semicolon":";", "dot":".", "comma":",",
-            "squote":"'", "dquote":'"', "btick":"`",
+            "squote":"'", "dquote":'"', "btick":"`", "equal":"=",
             "under":"_", "tilde":"~", "minus":"-", "plus":"+",
             "percent":"%", "carat":"^", "amper":"&", "times":"*",
             "bang":"!", "at":"@", "hash":"#", "dollar":"$",
-            "lbrace":"[", "rbrace":"]", "lbrace":"{", "rbrace":"}",
+            "lsquare":"[", "rsquare":"]", "lbrace":"{", "rbrace":"}",
             "lbracket":"(", "rbracket":")", "langle":"<", "rangle":">",
             "pipe":"|", "slash":"\\", "divide":"/", "qmark":"?",
             "unicorn":"\u1F984", "rainbow":"\u1F308",
@@ -142,6 +145,7 @@ class Engine: # { The Reference Implementation of : p-unity }
             name = "".join(name)
             word = getattr(source, fname)
 
+            print(name, " ", fname)
             if name in self.words:
                 raise ForthException(f"{name}: error(-4): Already defined")
 
@@ -167,14 +171,6 @@ class Engine: # { The Reference Implementation of : p-unity }
         return tests
 
     def __core__(self):
-
-        @ForthWord(self, "PRINT")
-        def PRINT(f, o):
-            print(o)
-
-        @ForthWord(self, "CONSTANT")
-        def CONSTANT(f):
-            f.state = f.CONSTANT
 
         self.sigil("(", self.COMMENT)
 
@@ -311,30 +307,30 @@ class Engine: # { The Reference Implementation of : p-unity }
             token = token[:-1]
         if start:
             token = token[1:]
-            self.__compile = []
-            self.__compile_name = None
+            self.compile__ = []
+            self.compile_name__ = None
 
         if token == ":":
             raise ForthException(':: error (-1): compile in compile')
 
-        if not self.__compile_name:
+        if not self.compile_name__:
             if not token == '':
-                self.__compile_name = token.upper()
+                self.compile_name__ = token.upper()
         else:
             if len(token):
                 token_upper = token.upper()
                 if not token_upper in self.words and token[0] in self.digits:
                     is_number, value = self.to_number(token)
                     if is_number:
-                        self.__compile.append(value)
+                        self.compile__.append(value)
                     else:
-                        self.__compile.append(token)
+                        self.compile__.append(token)
                 else:
-                    self.__compile.append(token)
+                    self.compile__.append(token)
 
         if end:
-            if self.__compile_name:
-                self.words[self.__compile_name] = self.__compile
+            if self.compile_name__:
+                self.words[self.compile_name__] = self.compile__
 
             self.state = self.INTERPRET
             return
@@ -375,24 +371,24 @@ class Engine: # { The Reference Implementation of : p-unity }
         if end:
             token = token[:-1]
         if start:
-            self.__json = []
-            self.__json_mode = token[1]
+            self.json__ = []
+            self.json_mode__ = token[1]
             token = token[1:]
-            if self.__json_mode == '(':
+            if self.json_mode__ == '(':
                 token = token[1:]
 
-        if self.__json_mode == '(':
+        if self.json_mode__ == '(':
             if end:
                 token = token[:-1]
 
-        self.__json.append(token)
+        self.json__.append(token)
 
         if end:
             def hook(values):
                 if '__complex__' in values:
                     return complex(values['real'], values['imag'])
                 return values
-            json = " ".join(self.__json)
+            json = " ".join(self.json__)
             json = simplejson.loads(json, use_decimal=True, object_hook=hook)
             self.stack.append(json)
             self.state = self.INTERPRET
@@ -422,20 +418,20 @@ class Engine: # { The Reference Implementation of : p-unity }
             token = token[1:]
             if invert:
                 token = token[1:]
-            self.__call = [token[1:]]
-            self.__call_invert = invert
+            self.call__ = [token[1:]]
+            self.call_invert__ = invert
 
         if end:
             obj = self.stack[-1]
-            code = getattr(obj, self.__call[0])
-            args = self.__call[1:]
+            code = getattr(obj, self.call__[0])
+            args = self.call__[1:]
             result = code(*args)
             if result == None:
                 pass
             elif isinstance(result, tuple):
                 self.stack.extend(result)
             else:
-                if self.__call_invert:
+                if self.call_invert__:
                     self.stack.append(not result)
                 else:
                     self.stack.append(result)
@@ -447,7 +443,7 @@ class Engine: # { The Reference Implementation of : p-unity }
 
 
     def CONSTANT(self, token):
-        self.words[token.upper()] = self.stack[-1]
+        self.words[token.upper()] = self.constant__
         self.state = self.INTERPRET
 
 
@@ -509,19 +505,6 @@ class Engine: # { The Reference Implementation of : p-unity }
         #    self.state_drop()
 
 
-
-class ForthWord(object):
-    def __init__ (self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self, func):
-        def newf(*args, **kwargs):
-            return func(*args, **kwargs)
-        argc = func.__code__.co_argcount
-        self.args[0].word(self.args[1], newf, argc=argc)
-        return newf
-
 __smoke_0__ = """
 
 T{ 0.1 0.2 + -> 0.3 }T
@@ -561,7 +544,7 @@ from decimal import Decimal
 from .STD import F_TEST
 from .STD import F_CORE, F_REPL
 from .STD import F_DSTACK, F_CONTROL
-from .STD import F_MATH
+from .STD import F_MATH, F_IO
 from .STD import F_OBJECT
 from .STD import F_CURSES
 from .STD import F_JSON

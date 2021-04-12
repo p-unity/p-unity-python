@@ -43,6 +43,27 @@ class LIB: # { CORE FORTH : words }
         words.sort()
         print(" ".join(words))
 
+    # ( x "<spaces>name" -- )
+    @staticmethod ### CONSTANT ###
+    def word_CONSTANT__R(f, x):
+        """
+        T{ 123 CONSTANT X123 -> }T
+        T{ X123 -> 123 }T
+        T{ : EQU CONSTANT ; -> }T
+        T{ X123 EQU Y123 -> }T
+        T{ Y123 -> 123 }T
+        """
+        f.constant__ = x
+        f.state = f.CONSTANT
+
+    @staticmethod ### 1+ ###
+    def word_1_plus__R_n2(f, n1):
+        return (n1 + 1,)
+
+    @staticmethod ### 1- ###
+    def word_1_minus__R_n2(f, n1):
+        return (n1 - 1,)
+
     @staticmethod ### HERE ###
     def word_HERE__R_a(f):
         return (f.here,)
