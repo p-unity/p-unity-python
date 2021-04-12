@@ -33,7 +33,7 @@ class LIB: # { The Object ABI : words }
         return (x, len(x),)
 
     @staticmethod ### ~ ###
-    def word_tilde__R_x_b(f, x):
+    def word_tidlies__R_x_b(f, x):
         return (x, not x,)
 
     @staticmethod ### [[ ###

@@ -73,8 +73,8 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.CONTROL = F_CONTROL.LIB(**kwargs)
         self.add_words(self.CONTROL)
 
-        self.CORE = F_CORE.LIB(**kwargs)
-        self.add_words(self.CORE)
+        self.NUCLEUS = F_NUCLEUS.LIB(**kwargs)
+        self.add_words(self.NUCLEUS)
 
         self.REPL = F_REPL.LIB(**kwargs)
         self.add_words(self.REPL)
@@ -106,7 +106,7 @@ class Engine: # { The Reference Implementation of : p-unity }
 
             "colon":":", "semicolon":";", "dot":".", "comma":",",
             "squote":"'", "dquote":'"', "btick":"`", "equal":"=",
-            "under":"_", "tilde":"~", "minus":"-", "plus":"+",
+            "under":"_", "tidlies":"~", "minus":"-", "plus":"+",
             "percent":"%", "carat":"^", "amper":"&", "times":"*",
             "bang":"!", "at":"@", "hash":"#", "dollar":"$",
             "lsquare":"[", "rsquare":"]", "lbrace":"{", "rbrace":"}",
@@ -542,7 +542,7 @@ import dis, copy, collections, simplejson
 from decimal import Decimal
 
 from .STD import F_TEST
-from .STD import F_CORE, F_REPL
+from .STD import F_NUCLEUS, F_REPL
 from .STD import F_DSTACK, F_CONTROL
 from .STD import F_MATH, F_IO
 from .STD import F_OBJECT

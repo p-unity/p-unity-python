@@ -27,16 +27,16 @@ class LIB: # { JavaScript Object Notation : words }
     def __init__(self, **kwargs):
         pass
 
-    @staticmethod ### JSON:SAVE ###
-    def word_JSON_colon_SAVE__R_s(f, x):
+    @staticmethod ### JSON-SAVE ###
+    def word_JSON_minus_SAVE__R_s(f, x):
         def encode(_):
             if isinstance(_, complex):
                 return {'__complex__':True, 'real':_.real, 'imag':_.imag}
             raise TypeError(repr(_) + " is not JSON serializable")
         return (x, simplejson.dumps(x, default=encode),)
 
-    @staticmethod ### JSON:LOAD ###
-    def word_JSON_colon_LOAD__R_x(f, s):
+    @staticmethod ### JSON-LOAD ###
+    def word_JSON_minus_LOAD__R_x(f, s):
         def h(_):
             if '__complex__' in _:
                 return complex(_['real'], _['imag'])

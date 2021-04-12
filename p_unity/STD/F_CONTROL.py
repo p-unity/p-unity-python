@@ -78,7 +78,7 @@ class LIB: # { Control Flow : words }
         return (x1 != x2,)
 
     @staticmethod ### ~= ###
-    def word_tilde_equal__R_b(f, x1, x2):
+    def word_tidlies_equal__R_b(f, x1, x2):
         return (x1 != x2,)
 
     @staticmethod ### != ###

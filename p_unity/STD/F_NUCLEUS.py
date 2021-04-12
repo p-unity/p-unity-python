@@ -5,12 +5,12 @@
 __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
-     _       _____    ____    _____    ______
-  /\| |/\   / ____|  / __ \  |  __ \  |  ____|
-  \ ` ' /  | |      | |  | | | |__) | | |__
- |_     _| | |      | |  | | |  _  /  |  __|
-  / , . \  | |____  | |__| | | | \ \  | |____
-  \/|_|\/   \_____|  \____/  |_|  \_\ |______|
+     _      _   _   _    _    _____   _        ______   _    _    _____
+  /\| |/\  | \ | | | |  | |  / ____| | |      |  ____| | |  | |  / ____|
+  \ ` ' /  |  \| | | |  | | | |      | |      | |__    | |  | | | (___
+ |_     _| | . ` | | |  | | | |      | |      |  __|   | |  | |  \___ \
+  / , . \  | |\  | | |__| | | |____  | |____  | |____  | |__| |  ____) |
+  \/|_|\/  |_| \_|  \____/   \_____| |______| |______|  \____/  |_____/
 
 
 
@@ -22,7 +22,7 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { CORE FORTH : words }
+class LIB: # { Nucleus : words }
 
     """
 
@@ -72,9 +72,17 @@ class LIB: # { CORE FORTH : words }
     def word_ALLOT__R(f, n):
         f.here = f.here + n
 
+    @staticmethod ### <TRUE> ###
+    def word_langle_TRUE_rangle__R_b(f):
+        return (True,)
+
+    @staticmethod ### <FALSE> ###
+    def word_langle_FALSE_rangle__R_b(f):
+        return (False,)
+
     @staticmethod ### ! ###
-    def word_bang(f, v, a):
-        f.memory[a] = v
+    def word_bang(f, x, a):
+        f.memory[a] = x
 
     @staticmethod ### @ ###
     def word_at(f, a):
