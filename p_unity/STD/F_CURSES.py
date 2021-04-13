@@ -24,6 +24,12 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { CURSES Text Interface : words }
 
+    """
+
+    T{ -> }T
+
+    """
+
     def __init__(self, **kwargs):
         self.c = None
         if 'stdscr' in kwargs:

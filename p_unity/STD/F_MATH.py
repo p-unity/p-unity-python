@@ -34,13 +34,43 @@ class LIB: # { Mathematical : words }
         pass
 
     @staticmethod ### + ###
-    def word_plus__R_n3(f, n1, n2):
-        "T{ 0.1 0.2 + -> 0.3 }T # Simple it seems; yet complex it is"
-        return (n1 + n2,)
+    def word_plus__R_x3(f, x1, x2):
+        """
+        T{ 0.1 0.2 + -> 0.3 }T ( Simple it seems, yet complex it is )
+        T{ 1.4j 2.2j + -> 3.6j }T
+        T{ 'Hello ''World + -> (("Hello World")) }T
+        """
+        if isinstance(x1, int) or isinstance(x1, Decimal):
+            return (x1 + x2,)
+
+        if isinstance(x1, complex):
+            return (x1 + x2,)
+
+        if isinstance(x1, list):
+            return (x1 + [x2],)
+
+        return (x1 + x2,)
+
 
     @staticmethod ### - ###
-    def word_minus__R_n3(f, n1, n2):
+    def word_minus__R_x3(f, x1, x2):
         "T{ 1+0j 2+0j - -> -1+0j }T"
+        if isinstance(x1, int) or isinstance(x1, Decimal):
+            return (x1 - x2,)
+
+        if isinstance(x1, complex):
+            return (x1 - x2,)
+
+        if isinstance(x1, list):
+            """
+            T{ ([1,2,3]) 2 - -> ([1,3]) }T"
+            """
+            return (list(filter((x2).__ne__, x1)),)
+
+        if isinstance(x1, dict):
+            del x1[x2]
+            return (x1,)
+
         return (n1 - n2,)
 
     @staticmethod ### * ###

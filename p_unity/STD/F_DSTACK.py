@@ -47,6 +47,12 @@ class LIB: # { DATA Stack Manipulation : words }
         #"T{ 1 2 DROP -> 1 }T T{ 0 DROP -> }T"
         return None
 
+    @staticmethod ### DROP:ALL ###
+    def word_DROP_colon_ALL__R(f):
+        #"T{ 1 2 DROP:ALL -> }T
+        f.stack = []
+        return None
+
     @staticmethod ### OVER ###
     def word_OVER__R_x1_x2_x1(f, x1, x2):
         "T{ 1 2 OVER -> 1 2 1 }T"

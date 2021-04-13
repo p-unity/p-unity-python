@@ -33,6 +33,10 @@ class LIB: # { Control Flow : words }
     T{  0 IF 123 ELSE 234 THEN -> 234 }T
     T{  1 IF 123 ELSE 234 THEN -> 123 }T
 
+    # if(0) {
+    # } else {
+    # }
+
     """
 
     def __init__(self, **kwargs):
@@ -56,6 +60,16 @@ class LIB: # { Control Flow : words }
             f.execute(c["IF"])
         else:
             f.execute(c["ELSE"])
+
+    @staticmethod ### END_IF ###
+    def word_END_IF__R(f):
+        c = f.cstack.pop()
+        f.state = c["r"]
+        if c["b"]:
+            f.execute(c["IF"])
+        else:
+            f.execute(c["ELSE"])
+
 
     @staticmethod ### < ###
     def word_langle__R_b(f, x1, x2):
@@ -84,6 +98,23 @@ class LIB: # { Control Flow : words }
     @staticmethod ### != ###
     def word_bang_equal__R_b(f, x1, x2):
         return (x1 != x2,)
+
+    @staticmethod ### 0= ###
+    def word_0_equal__R_b(f, x):
+        """
+        T{ 0 0= -> <true> }T
+        T{ 0.0 0= -> <true> }T
+        T{ 0.0j 0= -> <true> }T
+        """
+        return (x == 0,)
+
+    @staticmethod ### 0< ###
+    def word_0_langle__R_b(f, x):
+        return (x < 0,)
+
+    @staticmethod ### 0> ###
+    def word_0_rangle__R_b(f, x):
+        return (x > 0,)
 
 
 from collections import namedtuple

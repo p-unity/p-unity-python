@@ -33,6 +33,7 @@ class LIB: # { Nucleus : words }
     def __init__(self, **kwargs):
         pass
 
+
     @staticmethod ### WORDS ###
     def word_WORDS(f):
         words = []
@@ -42,6 +43,34 @@ class LIB: # { Nucleus : words }
             words.append(name)
         words.sort()
         print(" ".join(words))
+
+
+    @staticmethod ### ! ### ( x a-addr -- )
+    def word_bang__M__R(f, x, a): # Store x at a-addr.
+        ""
+        f.memory[a] = x
+
+
+    @staticmethod ### @ ###
+    def word_at__R_x(f, a):
+        f.stack.append(f.memory.get(a,0))
+
+
+    @staticmethod ### @NONE ###
+    def word_at_NONE__R_x(f, a):
+        f.stack.append(f.memory.get(a,None))
+
+
+    # ( x "<spaces>name" -- )
+    @staticmethod ### VARIABLE ###
+    def word_VARIABLE__V__R_a(f):
+        """
+        T{ VARIABLE V1 ->     }T
+        T{    123 V1 ! ->     }T
+        T{        V1 @ -> 123 }T
+        """
+        f.state = f.VARIABLE
+
 
     # ( x "<spaces>name" -- )
     @staticmethod ### CONSTANT ###
@@ -64,6 +93,14 @@ class LIB: # { Nucleus : words }
     def word_1_minus__R_n2(f, n1):
         return (n1 - 1,)
 
+    @staticmethod ### 2+ ###
+    def word_2_plus__R_n2(f, n1):
+        return (n1 + 2,)
+
+    @staticmethod ### 2- ###
+    def word_2_minus__R_n2(f, n1):
+        return (n1 - 2,)
+
     @staticmethod ### HERE ###
     def word_HERE__R_a(f):
         return (f.here,)
@@ -80,13 +117,6 @@ class LIB: # { Nucleus : words }
     def word_langle_FALSE_rangle__R_b(f):
         return (False,)
 
-    @staticmethod ### ! ###
-    def word_bang(f, x, a):
-        f.memory[a] = x
-
-    @staticmethod ### @ ###
-    def word_at(f, a):
-        f.stack.append(f.memory.get(a,0))
 
 
 

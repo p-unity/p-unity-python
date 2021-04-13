@@ -60,6 +60,10 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def run_stdio(self):
 
+        import keyboard
+
+        keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
+
         from icecream import ic, install
         install()
 

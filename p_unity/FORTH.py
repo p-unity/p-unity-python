@@ -5,13 +5,13 @@
 __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
-       ______    ____    _____    _______   _    _
-  _   |  ____|  / __ \  |  __ \  |__   __| | |  | |   _
- (_)  | |__    | |  | | | |__) |    | |    | |__| |  (_)
-      |  __|   | |  | | |  _  /     | |    |  __  |
-  _   | |      | |__| | | | \ \     | |    | |  | |   _
- (_)  |_|       \____/  |_|  \_\    |_|    |_|  |_|  ( )
-                                                     |/
+      ______    ____    _____    _______   _    _   /\   ____
+  _  |  ____|  / __ \  |  __ \  |__   __| | |  | | |/\| |___ \   _
+ (_) | |__    | |  | | | |__) |    | |    | |__| |        __) | (_)
+     |  __|   | |  | | |  _  /     | |    |  __  |       |__ <
+  _  | |      | |__| | | | \ \     | |    | |  | |       ___) |  _
+ (_) |_|       \____/  |_|  \_\    |_|    |_|  |_|      |____/  ( )
+                                                                |/
 
 
 )
@@ -19,10 +19,10 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 
 
+"""  # __banner__
 
-""" # __banner__
 
-class Engine: # { The Reference Implementation of : p-unity }
+class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
 
     def __init__(self, **kwargs):
 
@@ -42,7 +42,7 @@ class Engine: # { The Reference Implementation of : p-unity }
 
         self.words = {}
         self.words_argc = {}
-        self.state_names.extend(['words','words_argc'])
+        self.state_names.extend(['words', 'words_argc'])
 
         self.stack = []
         self.state_names.append('stack')
@@ -67,14 +67,14 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.TEST = F_TEST.LIB(**kwargs)
         self.add_words(self.TEST)
 
+        self.NUCLEUS = F_NUCLEUS.LIB(**kwargs)
+        self.add_words(self.NUCLEUS)
+
         self.DSTACK = F_DSTACK.LIB(**kwargs)
         self.add_words(self.DSTACK)
 
         self.CONTROL = F_CONTROL.LIB(**kwargs)
         self.add_words(self.CONTROL)
-
-        self.NUCLEUS = F_NUCLEUS.LIB(**kwargs)
-        self.add_words(self.NUCLEUS)
 
         self.REPL = F_REPL.LIB(**kwargs)
         self.add_words(self.REPL)
@@ -104,31 +104,35 @@ class Engine: # { The Reference Implementation of : p-unity }
 
     __word_map = {
 
-            "colon":":", "semicolon":";", "dot":".", "comma":",",
-            "squote":"'", "dquote":'"', "btick":"`", "equal":"=",
-            "under":"_", "tidlies":"~", "minus":"-", "plus":"+",
-            "percent":"%", "carat":"^", "amper":"&", "times":"*",
-            "bang":"!", "at":"@", "hash":"#", "dollar":"$",
-            "lsquare":"[", "rsquare":"]", "lbrace":"{", "rbrace":"}",
-            "lbracket":"(", "rbracket":")", "langle":"<", "rangle":">",
-            "pipe":"|", "slash":"\\", "divide":"/", "qmark":"?",
-            "unicorn":"\u1F984", "rainbow":"\u1F308",
-            "astonished":"\u1F632"
+        "colon": ":", "semicolon": ";", "dot": ".", "comma": ",",
+        "squote": "'", "dquote": '"', "btick": "`", "equal": "=",
+        "under": "_", "tidlies": "~", "minus": "-", "plus": "+",
+        "percent": "%", "carat": "^", "amper": "&", "times": "*",
+        "bang": "!", "at": "@", "hash": "#", "dollar": "$",
+        "lsquare": "[", "rsquare": "]", "lbrace": "{", "rbrace": "}",
+        "lbracket": "(", "rbracket": ")", "langle": "<", "rangle": ">",
+        "pipe": "|", "slash": "\\", "divide": "/", "qmark": "?",
+        "unicorn": "\u1F984", "rainbow": "\u1F308",
+        "astonished": "\u1F632"
 
-            }
+    }
 
     def add_words(self, source):
 
         tests = []
 
-        names = dir(source)
-        names.sort()
-
-        for fname in names:
+        names = []
+        for fname in dir(source):
             parts = fname.split('_')
             if len(parts) < 2 or not parts[0][:4] == 'word':
                 continue
-            parts = parts[1:]
+            word = getattr(source, fname)
+            names.append((word.__code__.co_firstlineno, fname))
+
+        names.sort()
+
+        for order, fname in names:
+            parts = fname.split('_')[1:]
 
             name = []
             for part in parts:
@@ -145,7 +149,7 @@ class Engine: # { The Reference Implementation of : p-unity }
             name = "".join(name)
             word = getattr(source, fname)
 
-            print(name, " ", fname)
+            ic(name, fname)
             if name in self.words:
                 raise ForthException(f"{name}: error(-4): Already defined")
 
@@ -157,7 +161,12 @@ class Engine: # { The Reference Implementation of : p-unity }
             if word.__doc__:
                 for line in word.__doc__.split('\n'):
                     f_count = self.TEST.f_count
-                    self.execute(line.split())
+                    try:
+                        self.execute(line.split())
+                    except Exception as ex:
+                        ic(line)
+                        ic(word.__code__.co_firstlineno)
+                        raise ex
                     if not f_count == self.TEST.f_count:
                         print(str(word))
 
@@ -166,7 +175,7 @@ class Engine: # { The Reference Implementation of : p-unity }
                 f_count = self.TEST.f_count
                 self.execute(line.split())
                 if not f_count == self.TEST.f_count:
-                   print(str(source))
+                    print(str(source))
 
         return tests
 
@@ -187,8 +196,6 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.sigil("({", self.sJSON)
         self.sigil("((", self.sJSON)
         self.sigil('("', self.sJSON)
-
-
 
     def to_number(self, token):
         base = 10
@@ -218,8 +225,6 @@ class Engine: # { The Reference Implementation of : p-unity }
             else:
                 return (True, int(token, base))
 
-        return (False, None)
-
     def IF(f, token):
         token_u = token.upper() if isinstance(token, str) else token
 
@@ -227,8 +232,8 @@ class Engine: # { The Reference Implementation of : p-unity }
             f.state = f.ELSE
             return
 
-        if token_u == "THEN":
-            f.CONTROL.word_THEN__R(f)
+        if token_u == "END_IF" or token_u == "THEN":
+            f.CONTROL.word_END_IF__R(f)
             f.state = f.INTERPRET
             return
 
@@ -242,8 +247,8 @@ class Engine: # { The Reference Implementation of : p-unity }
             f.state = f.IF
             return
 
-        if token_u == "THEN":
-            f.CONTROL.word_THEN__R(f)
+        if token_u == "END_IF" or token_u == "THEN":
+            f.CONTROL.word_END_IF__R(f)
             f.state = f.INTERPRET
             return
 
@@ -300,7 +305,6 @@ class Engine: # { The Reference Implementation of : p-unity }
 
             self.stack.append(code)
 
-
     def COMPILE(self, token, start=False):
         end = token[-1] == ';'
         if end:
@@ -347,7 +351,6 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.stack.append(" ".join(token.split(self.squote_space)))
         self.state = self.INTERPRET
 
-
     def DOT_QUOTE(self, token, start=False):
         end = token[-1] == '"'
         if end:
@@ -364,7 +367,6 @@ class Engine: # { The Reference Implementation of : p-unity }
             return
 
         self.state = self.DOT_QUOTE
-
 
     def sJSON(self, token, start=False):
         end = token[-1] == ')'
@@ -388,6 +390,7 @@ class Engine: # { The Reference Implementation of : p-unity }
                 if '__complex__' in values:
                     return complex(values['real'], values['imag'])
                 return values
+
             json = " ".join(self.json__)
             json = simplejson.loads(json, use_decimal=True, object_hook=hook)
             self.stack.append(json)
@@ -441,11 +444,14 @@ class Engine: # { The Reference Implementation of : p-unity }
 
         self.state = self.CALL
 
-
     def CONSTANT(self, token):
         self.words[token.upper()] = self.constant__
         self.state = self.INTERPRET
 
+    def VARIABLE(self, token):
+        self.words[token.upper()] = self.here
+        self.here +=1
+        self.state = self.INTERPRET
 
     def SEE(self, token):
         word = self.words.get(token.upper(), None)
@@ -456,11 +462,9 @@ class Engine: # { The Reference Implementation of : p-unity }
             print(word)
         self.state = self.INTERPRET
 
-
     def sigil(self, name, func):
         name = name.upper()
         self.sigils[name] = func
-
 
     def word(self, name, func, has_self=False, argc=None):
         name = name.upper()
@@ -485,9 +489,9 @@ class Engine: # { The Reference Implementation of : p-unity }
         self.state_stack.pop()
 
     def execute(self, token_list, rollback=False):
-        #if rollback:
+        # if rollback:
         #    self.state_push()
-        #try:
+        # try:
 
         for token in token_list:
             if isinstance(token, str) and len(token):
@@ -496,12 +500,12 @@ class Engine: # { The Reference Implementation of : p-unity }
 
             self.state(token)
 
-        #except Exception as ex:
+        # except Exception as ex:
         #    #if rollback:
         #    #    self.state_pop()
         #    raise ex
 
-        #if rollback:
+        # if rollback:
         #    self.state_drop()
 
 
@@ -534,8 +538,10 @@ GETKEY
 
 """
 
+
 class ForthException(Exception):
     pass
+
 
 import dis, copy, collections, simplejson
 
