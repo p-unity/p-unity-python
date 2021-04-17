@@ -2,7 +2,7 @@
 # -*- encoding: utf-8
 
 
-__banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
+__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
      _      ______   _____    _____   _        ______   _______
@@ -2234,7 +2234,7 @@ of new full-width/kern/smush alternatives, but default output is NOT changed.
   \___^___/ @
             @
             @@
--0x0005  
+-0x0005
 alpha = a, beta = b, gamma = g, delta = d, epsilon = e   @
 zeta = z, eta = h, theta = q, iota = i, lamda = l, mu = m@
 nu = n, xi = x, omicron = o, pi = p, rho = r, sigma = s  @

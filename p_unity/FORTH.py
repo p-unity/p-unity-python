@@ -2,7 +2,7 @@
 # -*- encoding: utf-8
 
 
-__banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
+__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
       ______    ____    _____    _______   _    _   /\   ____
@@ -149,7 +149,7 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
             name = "".join(name)
             word = getattr(source, fname)
 
-            ic(name, fname)
+            #ic(name, fname)
             if name in self.words:
                 raise ForthException(f"{name}: error(-4): Already defined")
 
@@ -164,8 +164,6 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
                     try:
                         self.execute(line.split())
                     except Exception as ex:
-                        ic(line)
-                        ic(word.__code__.co_firstlineno)
                         raise ex
                     if not f_count == self.TEST.f_count:
                         print(str(word))
@@ -225,6 +223,17 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
             else:
                 return (True, int(token, base))
 
+    def BEGIN(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "REPEAT":
+            f.CONTROL.word_REPEAT__R(f, free_standing=False)
+            return
+
+        f.cstack[-1]["TOKENS"].append(token)
+        f.state = f.BEGIN
+
+
     def IF(f, token):
         token_u = token.upper() if isinstance(token, str) else token
 
@@ -239,6 +248,58 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
 
         f.cstack[-1]["IF"].append(token)
         f.state = f.IF
+
+    def langle_dot_IF(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "THEN.>":
+            f.state = f.THEN_dot_rangle
+            return
+
+        if token_u == "ELSE.>":
+            f.state = f.ELSE_dot_rangle
+            return
+
+        if token_u == "IF.":
+            f.CONTROL.word_IF_dot__R(f, free_standing=False)
+            return
+
+        raise ForthException("<.IF: error(-0): Words not allowed between <.IF and THEN.>")
+
+    def THEN_dot_rangle(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "THEN.>":
+            raise ForthSyntaxException("THEN.>: error(-0): Nested THEN.> Not Allowed")
+
+        if token_u == "ELSE.>":
+            f.state = f.ELSE_dot_rangle
+            return
+
+        if token_u == "IF.":
+            f.CONTROL.word_IF_dot__R(f, free_standing=False)
+            return
+
+        f.cstack[-1]["THEN.>"].append(token)
+        f.state = f.THEN_dot_rangle
+
+    def ELSE_dot_rangle(f, token):
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "THEN.>":
+            raise ForthSyntaxException("THEN.>: error(-0): THEN.> Folling ELSE.> Not Allowed")
+
+        if token_u == "ELSE.>":
+            raise ForthSyntaxException("ELSE.>: error(-0): Nested ELSE.> Not Allowed")
+
+        if token_u == "IF.":
+            f.CONTROL.word_IF_dot__R(f, free_standing=False)
+            return
+
+        f.cstack[-1]["ELSE.>"].append(token)
+        f.state = f.ELSE_dot_rangle
+
+
 
     def ELSE(f, token):
         token_u = token.upper() if isinstance(token, str) else token
@@ -362,7 +423,7 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
         self.__dot_quote.append(token)
 
         if end:
-            self.stack.append(" ".join(self.__dot_quote))
+            print(" ".join(self.__dot_quote))
             self.state = self.INTERPRET
             return
 
@@ -488,10 +549,17 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
     def state_drop(self):
         self.state_stack.pop()
 
-    def execute(self, token_list, rollback=False):
+    def raise_SyntaxException(self, details):
+        raise ForthSyntaxException(details)
+
+    def execute(self, token_list, rollback=False, push_frame=True):
         # if rollback:
         #    self.state_push()
         # try:
+
+        c = {"m":"CALL", "EXIT":False}
+        c_index = len(self.cstack)
+        self.cstack.append(c)
 
         for token in token_list:
             if isinstance(token, str) and len(token):
@@ -499,6 +567,11 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
                     break
 
             self.state(token)
+            if self.cstack[c_index]["EXIT"]:
+                break
+
+        if push_frame:
+            self.cstack = self.cstack[:c_index]
 
         # except Exception as ex:
         #    #if rollback:
@@ -542,6 +615,8 @@ GETKEY
 class ForthException(Exception):
     pass
 
+class ForthSyntaxException(ForthException):
+    pass
 
 import dis, copy, collections, simplejson
 

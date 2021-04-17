@@ -2,7 +2,7 @@
 # -*- encoding: utf-8
 
 
-__banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
+__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
          _   _
@@ -60,9 +60,9 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def run_stdio(self):
 
-        import keyboard
+        import rich
 
-        keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
+        #keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
 
         from icecream import ic, install
         install()
@@ -93,9 +93,9 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
             line = line.strip()
 
             #try:
-            e.execute(line.split(), rollback=True)
+            e.execute(line.split(), rollback=True, push_frame=False)
             #except Exception as ex:
-            #    details = str(ic(ex))
+            #    details = str(ex)
             #    rich.print(f"[bold red]{details}[/]")
 
             print("=> ", end="")

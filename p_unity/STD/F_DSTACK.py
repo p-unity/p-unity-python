@@ -2,7 +2,7 @@
 # -*- encoding: utf-8
 
 
-__banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
+__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                    SPDX-License-Identifier: Programming-Unity-10.42
 
      _      _____     _____   _______               _____   _  __

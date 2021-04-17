@@ -1,0 +1,15 @@
+asks
+rich
+trio
+toml
+click
+quart
+arrow
+redio
+pydantic
+hypercorn
+pyrsistent
+jsonschema
+quart-trio
+quart-schema
+python-dotenv
