@@ -8,6 +8,7 @@ arrow
 redio
 pydantic
 hypercorn
+simplejson
 pyrsistent
 jsonschema
 quart-trio

@@ -64,8 +64,14 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
         #keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
 
-        from icecream import ic, install
-        install()
+        try:
+            from icecream import ic
+        except ImportError:  # Graceful fallback if IceCream isn't installed.
+            ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
+        #builtins = __import__('__builtin__')
+        builtins = __import__('builtins')
+        setattr(builtins, 'ic', ic)
 
         e = self.e
 
