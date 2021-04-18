@@ -3,7 +3,7 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
      _      _______ __       __      _________
   /\| |/\  |__   __/ /       \ \    |__   __\ \
@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { Testing, TESTING, 123 : words }
 
-    def __init__(self, **kwargs):
+    def __init__(self, f, **kwargs):
         self.p_count = 0
         self.f_count = 0
 
@@ -49,6 +49,7 @@ class LIB: # { Testing, TESTING, 123 : words }
     def word_rbrace_T(f):
         have = f.stack[len(f.__test):]
         need = f.__test_need
+        ic(have, need)
         if have == need:
             f.TEST.p_count += 1
         else:

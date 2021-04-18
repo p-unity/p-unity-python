@@ -3,7 +3,7 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
       ______    ____    _____    _______   _    _   /\   ____
   _  |  ____|  / __ \  |  __ \  |__   __| | |  | | |/\| |___ \   _
@@ -24,7 +24,9 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
 
-    def __init__(self, **kwargs):
+    def __init__(self, run_tests=None, autoexec=None):
+
+        self.run_tests = run_tests # None/0, 1=Sanity, 2=&Smoke
 
         self.g = {}
 
@@ -64,41 +66,41 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
 
         self.__core__()
 
-        self.TEST = F_TEST.LIB(**kwargs)
+        self.TEST = F_TEST.LIB(self)
         self.add_words(self.TEST)
 
-        self.NUCLEUS = F_NUCLEUS.LIB(**kwargs)
+        self.NUCLEUS = F_NUCLEUS.LIB(self)
         self.add_words(self.NUCLEUS)
 
-        self.DSTACK = F_DSTACK.LIB(**kwargs)
+        self.DSTACK = F_DSTACK.LIB(self)
         self.add_words(self.DSTACK)
 
-        self.CONTROL = F_CONTROL.LIB(**kwargs)
+        self.CONTROL = F_CONTROL.LIB(self)
         self.add_words(self.CONTROL)
 
-        self.REPL = F_REPL.LIB(**kwargs)
+        self.REPL = F_REPL.LIB(self)
         self.add_words(self.REPL)
 
-        self.IO = F_IO.LIB(**kwargs)
+        self.IO = F_IO.LIB(self)
         self.add_words(self.IO)
 
-        self.MATH = F_MATH.LIB(**kwargs)
+        self.MATH = F_MATH.LIB(self)
         self.add_words(self.MATH)
 
-        self.OBJECT = F_OBJECT.LIB(**kwargs)
+        self.OBJECT = F_OBJECT.LIB(self)
         self.add_words(self.OBJECT)
 
-        self.JSON = F_JSON.LIB(**kwargs)
+        self.JSON = F_JSON.LIB(self)
         self.add_words(self.JSON)
 
-        self.CURSES = F_CURSES.LIB(**kwargs)
+        self.CURSES = F_CURSES.LIB(self)
         self.add_words(self.CURSES)
 
-        for line in __smoke_0__.split('\n'):
-            self.execute(line.split())
+        if self.run_tests and self.run_tests >= 2:
+            for line in __smoke_0__.split('\n'):
+                self.execute(line.split())
 
-        if 'autoexec' in kwargs:
-            autoexec = kwargs['autoexec']
+        if autoexec:
             for line in autoexec.split('\n'):
                 self.execute(line.split())
 
@@ -158,7 +160,7 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
             if argc > 1:
                 self.words_argc[name] = argc - 1
 
-            if word.__doc__:
+            if self.run_tests and word.__doc__:
                 for line in word.__doc__.split('\n'):
                     f_count = self.TEST.f_count
                     try:
@@ -168,7 +170,7 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
                     if not f_count == self.TEST.f_count:
                         print(str(word))
 
-        if source.__doc__:
+        if self.run_tests and source.__doc__:
             for line in source.__doc__.split('\n'):
                 f_count = self.TEST.f_count
                 self.execute(line.split())

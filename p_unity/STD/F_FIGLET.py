@@ -3,16 +3,16 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
-     _      ______   _____    _____   _        ______   _______
-  /\| |/\  |  ____| |_   _|  / ____| | |      |  ____| |__   __|
-  \ ` ' /  | |__      | |   | |  __  | |      | |__       | |
- |_     _| |  __|     | |   | | |_ | | |      |  __|      | |
-  / , . \  | |       _| |_  | |__| | | |____  | |____     | |
-  \/|_|\/  |_|      |_____|  \_____| |______| |______|    |_|
-
-
+     _                  _____    _____   _____   _____ 
+  /\| |/\      /\      / ____|  / ____| |_   _| |_   _|
+  \ ` ' /     /  \    | (___   | |        | |     | |  
+ |_     _|   / /\ \    \___ \  | |        | |     | |  
+  / , . \   / ____ \   ____) | | |____   _| |_   _| |_ 
+  \/|_|\/  /_/    \_\ |_____/   \_____| |_____| |_____|
+                                                       
+                                                       
 
 )
 
@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { ASCII Fonts : words }
 
-    def __init__(self, **kwargs):
+    def __init__(self, f, **kwargs):
         pass
 
     @staticmethod ### . ###

@@ -3,7 +3,7 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
          _   _
         | | (_)
@@ -26,7 +26,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def __init__(self, **kwargs):
 
-        self.e = FORTH.Engine(**kwargs)
+        self.e = FORTH.Engine(run_tests=2, **kwargs)
 
         self.c = None
         if 'stdscr' in kwargs:
@@ -81,9 +81,13 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         e.word("S", lambda f: f.exit(f,1))
         e.word("STOP", lambda f: f.exit(f,1))
 
-        print("")
+        v = ["p-unity FORTH v42.01"]
         p, f = e.TEST.p_count, e.TEST.f_count
-        print(f"p-unity FORTH v42.01 (Sanity Tests; {p} Pass, {f} Fail)")
+        if p > 0:
+            v.append(f"(Tests; {p} Pass, {f} Fail)")
+
+        print("")
+        print(" ".join(v))
         print("")
 
         while e.running == -1:

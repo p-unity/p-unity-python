@@ -3,7 +3,7 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
      _      _   _   _    _    _____   _        ______   _    _    _____
   /\| |/\  | \ | | | |  | |  / ____| | |      |  ____| | |  | |  / ____|
@@ -30,7 +30,7 @@ class LIB: # { Nucleus : words }
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, f, **kwargs):
         pass
 
 

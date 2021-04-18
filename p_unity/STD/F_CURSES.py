@@ -3,7 +3,7 @@
 
 
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                   SPDX-License-Identifier: Programming-Unity-10.42
+                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
      _       _____   _    _   _____     _____   ______    _____
   /\| |/\   / ____| | |  | | |  __ \   / ____| |  ____|  / ____|
@@ -30,7 +30,7 @@ class LIB: # { CURSES Text Interface : words }
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, f, **kwargs):
         self.c = None
         if 'stdscr' in kwargs:
             self.c = kwargs['stdscr']
