@@ -5,13 +5,13 @@
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                     License SPDX: Programming-Unity-10.42 or as negotiated.
 
-      ______    ____    _____    _______   _    _   /\   ____
-  _  |  ____|  / __ \  |  __ \  |__   __| | |  | | |/\| |___ \   _
- (_) | |__    | |  | | | |__) |    | |    | |__| |        __) | (_)
-     |  __|   | |  | | |  _  /     | |    |  __  |       |__ <
-  _  | |      | |__| | | | \ \     | |    | |  | |       ___) |  _
- (_) |_|       \____/  |_|  \_\    |_|    |_|  |_|      |____/  ( )
-                                                                |/
+       ______    ____    _____    _______   _    _     /\   ____
+  _   |  ____|  / __ \  |  __ \  |__   __| | |  | |   |/\| |___ \    _
+ (_)  | |__    | |  | | | |__) |    | |    | |__| |          __) |  (_)
+      |  __|   | |  | | |  _  /     | |    |  __  |         |__ <
+  _   | |      | |__| | | | \ \     | |    | |  | |         ___) |   _
+ (_)  |_|       \____/  |_|  \_\    |_|    |_|  |_|        |____/   ( )
+                                                                    |/
 
 
 )
@@ -22,7 +22,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 """  # __banner__
 
 
-class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
+class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
     def __init__(self, run_tests=None, autoexec=None):
 
@@ -93,6 +93,9 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
         self.JSON = F_JSON.LIB(self)
         self.add_words(self.JSON)
 
+        self.ASCII = F_ASCII.LIB(self)
+        self.add_words(self.ASCII)
+
         self.CURSES = F_CURSES.LIB(self)
         self.add_words(self.CURSES)
 
@@ -151,7 +154,6 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
             name = "".join(name)
             word = getattr(source, fname)
 
-            #ic(name, fname)
             if name in self.words:
                 raise ForthException(f"{name}: error(-4): Already defined")
 
@@ -624,10 +626,10 @@ import dis, copy, collections, simplejson
 
 from decimal import Decimal
 
-from .STD import F_TEST
-from .STD import F_NUCLEUS, F_REPL
-from .STD import F_DSTACK, F_CONTROL
-from .STD import F_MATH, F_IO
-from .STD import F_OBJECT
-from .STD import F_CURSES
-from .STD import F_JSON
+from .CORE import F_TEST
+from .CORE import F_NUCLEUS, F_REPL
+from .CORE import F_DSTACK, F_CONTROL
+from .CORE import F_MATH, F_IO
+from .CORE import F_OBJECT
+from .CORE import F_CURSES
+from .CORE import F_JSON, F_ASCII

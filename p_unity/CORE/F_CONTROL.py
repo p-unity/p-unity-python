@@ -77,7 +77,7 @@ class LIB: # { Control Flow : words }
 
         c = f.cstack.pop()
         f.state = c["r"]
-        if ic(c["b"]):
+        if c["b"]:
            f.execute(c["THEN.>"])
         else:
            f.execute(c["ELSE.>"])
@@ -95,9 +95,7 @@ class LIB: # { Control Flow : words }
             f.raise_SyntaxException("REPEAT: error(-0): Free Standing REPEAT Not Allowed")
 
         c = f.cstack.pop()
-        ic(c)
         while True:
-            ic(c["TOKENS"])
             f.state = f.INTERPRET
             f.execute(c["TOKENS"])
             if not f.stack.pop():

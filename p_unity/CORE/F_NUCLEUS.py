@@ -76,11 +76,11 @@ class LIB: # { Nucleus : words }
     @staticmethod ### CONSTANT ###
     def word_CONSTANT__R(f, x):
         """
-        T{ 123 CONSTANT X123 -> }T
-        T{ X123 -> 123 }T
-        T{ : EQU CONSTANT ; -> }T
-        T{ X123 EQU Y123 -> }T
-        T{ Y123 -> 123 }T
+        T{ 123 CONSTANT X123 ->     }T
+        T{ X123              -> 123 }T
+        T{ : EQU CONSTANT ;  ->     }T
+        T{ X123 EQU Y123     ->     }T
+        T{ Y123              -> 123 }T
         """
         f.constant__ = x
         f.state = f.CONSTANT

@@ -22,9 +22,6 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 """ # __banner__
 
 
-import icecream
-icecream.install()
-icecream.ic.disable()
-import p_unity.cli
-p_unity.cli.ide_stdio()
+import p_unity.cli_FORTH
+p_unity.cli_FORTH.ide_stdio()
 

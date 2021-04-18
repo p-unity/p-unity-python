@@ -5,14 +5,14 @@
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                     License SPDX: Programming-Unity-10.42 or as negotiated.
 
-     _                  _____    _____   _____   _____ 
+     _                  _____    _____   _____   _____
   /\| |/\      /\      / ____|  / ____| |_   _| |_   _|
-  \ ` ' /     /  \    | (___   | |        | |     | |  
- |_     _|   / /\ \    \___ \  | |        | |     | |  
-  / , . \   / ____ \   ____) | | |____   _| |_   _| |_ 
+  \ ` ' /     /  \    | (___   | |        | |     | |
+ |_     _|   / /\ \    \___ \  | |        | |     | |
+  / , . \   / ____ \   ____) | | |____   _| |_   _| |_
   \/|_|\/  /_/    \_\ |_____/   \_____| |_____| |_____|
-                                                       
-                                                       
+
+
 
 )
 
@@ -37,7 +37,7 @@ from pyfiglet import Figlet
 
 figlet_fonts = {}
 
-figlent_fonts['big'] = """
+figlet_fonts['big'] = """
 
 flf2a$ 8 6 59 15 10 0 24463
 Big by Glenn Chappell 4/93 -- based on Standard

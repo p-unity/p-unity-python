@@ -5,14 +5,14 @@
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                     License SPDX: Programming-Unity-10.42 or as negotiated.
 
-         _   _
-        | | (_)
-   ___  | |  _       _ __    _   _
-  / __| | | | |     | '_ \  | | | |
- | (__  | | | |  _  | |_) | | |_| |
-  \___| |_| |_| (_) | .__/   \__, |
-                    | |       __/ |
-                    |_|      |___/
+         _   _            ______    ____    _____    _______    _    _
+        | | (_)          |  ____|  / __ \  |  __ \  |__   __|  | |  | |
+   ___  | |  _           | |__    | |  | | | |__) |    | |     | |__| |
+  / __| | | | |          |  __|   | |  | | |  _  /     | |     |  __  |
+ | (__  | | | |          | |      | |__| | | | \ \     | |     | |  | |
+  \___| |_| |_|          |_|       \____/  |_|  \_\    |_|     |_|  |_|
+                 ______
+                |______|
 
 )
 
@@ -25,6 +25,14 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def __init__(self, **kwargs):
+
+        try:
+            from icecream import ic
+        except ImportError:  # Graceful fallback if IceCream isn't installed.
+            ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
+        builtins = __import__('builtins')
+        setattr(builtins, 'ic', ic)
 
         self.e = FORTH.Engine(run_tests=2, **kwargs)
 
@@ -64,15 +72,6 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
         #keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
 
-        try:
-            from icecream import ic
-        except ImportError:  # Graceful fallback if IceCream isn't installed.
-            ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
-
-        #builtins = __import__('__builtin__')
-        builtins = __import__('builtins')
-        setattr(builtins, 'ic', ic)
-
         e = self.e
 
         e.running = -1
@@ -90,7 +89,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         v = ["p-unity FORTH v42.01"]
         p, f = e.TEST.p_count, e.TEST.f_count
         if p > 0:
-            v.append(f"(Tests; {p} Pass, {f} Fail)")
+            v.append(f"(Sanity Tests; {p} Pass, {f} Fail)")
 
         print("")
         print(" ".join(v))
@@ -135,5 +134,3 @@ def ide_stdio():
 import sys
 
 from . import FORTH
-
-
