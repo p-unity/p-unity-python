@@ -30,24 +30,24 @@ class TestFORTH:
         1 2 3
         """
         e = FORTH.Engine(autoexec=self.test_engine_0000.__doc__)
-        assert e.stack == [1, 2, 3]
-        assert e.memory == {}
+        assert e.root.stack == [1, 2, 3]
+        assert e.root.memory == {}
 
     def test_engine_0001(self):
         r"""
         'Hello 'World
         """
         e = FORTH.Engine(autoexec=self.test_engine_0001.__doc__)
-        assert e.stack == ["Hello", "World"]
-        assert e.memory == {}
+        assert e.root.stack == ["Hello", "World"]
+        assert e.root.memory == {}
 
     def test_engine_0002(self):
         r"""
         123 456 !
         """
         e = FORTH.Engine(autoexec=self.test_engine_0002.__doc__)
-        assert e.stack == []
-        assert e.memory == {456 : 123}
+        assert e.root.stack == []
+        assert e.root.memory == {456 : 123}
 
 
     def test_engine_0003(self):
@@ -56,8 +56,8 @@ class TestFORTH:
         'Baz 'FOO_2 !
         """
         e = FORTH.Engine(autoexec=self.test_engine_0003.__doc__)
-        assert e.stack == []
-        assert e.memory == {"FOO_1" : 123, "FOO_2": "Baz"}
+        assert e.root.stack == []
+        assert e.root.memory == {"FOO_1" : 123, "FOO_2": "Baz"}
 
 
     def test_engine_1000(self):

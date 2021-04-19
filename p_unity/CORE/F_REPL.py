@@ -24,20 +24,37 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { By the Power of Introspection : words }
 
-    def __init__(self, f, **kwargs):
+    def __init__(self, e, **kwargs):
         pass
 
     @staticmethod ### . ###
-    def word_dot__R(f, x):
+    def word_dot__R(e, t, c, x):
         print(f" {x}")
 
     @staticmethod ### .. ###
-    def word_dot_dot__R_x(f, x):
+    def word_dot_dot__R_x(e, t, c, x):
         print(f" {x}")
         return (x,)
 
+    @staticmethod ### SEE ###
+    def word_SEE(e, t, c):
+        t.state = e.REPL.state_SEE
+
+    @staticmethod
+    def state_SEE(e, t, c, token):
+        import dis
+        word = t.words.get(token.upper(), None)
+        if not word:
+            e.root.words.get(token.upper(), None)
+        if callable(word):
+            dis.show_code(word)
+            dis.dis(word)
+        else:
+            print(word)
+        t.state = e.state_INTERPRET
+
     @staticmethod ### DIR ###
-    def word_DIR__R_x(f, x):
+    def word_DIR__R_x(e, t, c, x):
         d = []
         for k in dir(x):
             if not k[0] == '_': d.append(k)
@@ -45,43 +62,55 @@ class LIB: # { By the Power of Introspection : words }
         return (x,)
 
     @staticmethod ### DIR:ALL ###
-    def word_DIR_colon_ALL__R_x(f, x):
+    def word_DIR_colon_ALL__R_x(e, t, c, x):
         print(str(dir(x)))
         return (x,)
 
-    @staticmethod ### SEE ###
-    def word_SEE(f):
-        f.state = f.SEE
 
     @staticmethod ### SEE:MEM ###
-    def word_SEE_colon_MEM(f):
-        print(str(f.memory))
+    def word_SEE_colon_MEM(e, t, c):
+        print(str(e.root.memory))
+        if not t.is_root:
+            print(str(t.memory))
 
     @staticmethod ### SEE:ALL ###
-    def word_SEE_colon_ALL(f):
+    def word_SEE_colon_ALL(e, t, c):
         show = {}
-        for name in f.words:
-            if not callable(f.words[name]):
-                show[name] = f.words[name]
+        for name in e.root.words:
+            if not callable(e.root.words[name]):
+                show[name] = e.root.words[name]
+        for name in t.words:
+            if not callable(t.words[name]):
+                show[name] = t.words[name]
         print(str(show))
 
     @staticmethod ### SEE:ALL+ ###
-    def word_SEE_colon_ALL_plus(f):
+    def word_SEE_colon_ALL_plus(e, t, c):
         show = {}
-        for name in f.words:
-            if not callable(f.words[name]):
-                show[name] = f.words[name]
+        for name in e.root.words:
+            if not callable(e.root.words[name]):
+                show[name] = e.root.words[name]
             else:
-                show[name] = (f.words_argc.get(name,0))
+                show[name] = (e.root.words_argc.get(name,0))
+        for name in t.words:
+            if not callable(t.words[name]):
+                show[name] = t.words[name]
+            else:
+                show[name] = (t.words_argc.get(name,0))
         print(str(show))
+
         show = {}
-        for name in f.sigils:
+        for name in e.root.sigils:
+            show[name] = ('SIGIL')
+        for name in t.sigils:
             show[name] = ('SIGIL')
         print(str(show))
 
     @staticmethod ### SEE:ALL++ ###
-    def word_SEE_colon_ALL_plus_plus(f):
-        print(str(f.words))
-        print(str(f.sigils))
+    def word_SEE_colon_ALL_plus_plus(e, t, c):
+        print(str(e.root.words))
+        print(str(t.words))
+        print(str(e.root.sigils))
+        print(str(t.sigils))
 
 

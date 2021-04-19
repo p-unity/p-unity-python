@@ -24,11 +24,19 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { ASCII Fonts : words }
 
-    def __init__(self, f, **kwargs):
+    """
+
+    T{ 'Hello'World -> 'Hello'World }T
+    T{ 'Goodbye ''World + -> 'Goodbye ''World + }T
+
+    """
+
+
+    def __init__(self, e, **kwargs):
         pass
 
     @staticmethod ### . ###
-    def word_FIGLET__R_s2(f, s1):
+    def word_FIGLET__R_s2(e, t, c, s1):
 
 
         print(f" {x}")

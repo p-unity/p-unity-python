@@ -26,63 +26,65 @@ class LIB: # { CURSES Text Interface : words }
 
     """
 
-    T{ -> }T
+    ( in F_CURSES )
+
+    # T{ -> }T
 
     """
 
-    def __init__(self, f, **kwargs):
-        self.c = None
+    def __init__(self, e, **kwargs):
+        self.stdscr = None
         if 'stdscr' in kwargs:
-            self.c = kwargs['stdscr']
+            self.stdscr = kwargs['stdscr']
 
     @staticmethod ### CURSES ###
-    def word_CURSES(f):
+    def word_CURSES(e, t, c):
         pass
 
     @staticmethod ### KEY-MAP ###
-    def word_KEY_minus_MAP__R_x(f):
+    def word_KEY_minus_MAP__R_x(e, t, c):
         return (KEY_MAP,)
 
     @staticmethod ### WINDOW ###
-    def word_WINDOW__R_x(f, n1, n2, n3, n4):
+    def word_WINDOW__R_x(e, t, c, n1, n2, n3, n4):
         global scr
         x = scr.newwin(n3, n4, n1, n2)
         return (x,)
 
     @staticmethod ### BORDER ###
-    def word_BORDER__R_x(f, x):
+    def word_BORDER__R_x(e, t, c, x):
         x.border()
         return (x,)
 
     @staticmethod ### REFRESH ###
-    def word_REFRESH__R_x(f, x):
+    def word_REFRESH__R_x(e, t, c, x):
         x.refresh()
         return (x,)
 
     @staticmethod ### BACKGROUND ###
-    def word_BACKGROUND__R_x1(f, x1, s, x2):
+    def word_BACKGROUND__R_x1(e, t, c, x1, s, x2):
         if not isinstance(x2, string): x2 = tuple(x2)
         x1.background(s, x2)
         return (x1,)
 
     @staticmethod ### GETKEY ###
-    def word_GETKEY__R_x_s(f, x):
+    def word_GETKEY__R_x_s(e, t, c, x):
         k = x.getch()
         return (x,k)
 
     @staticmethod ### WRITE ###
-    def word_WRITE__R_x(f, x, s, n1, n2):
+    def word_WRITE__R_x(e, t, c, x, s, n1, n2):
         x.write(s, (n1, n2))
         return (x)
 
     @staticmethod ### WRITEC ###
-    def word_WRITEC__R_x1(f, x1, s, n1, n2, x2):
+    def word_WRITEC__R_x1(e, t, c, x1, s, n1, n2, x2):
         if not isinstance(x2, str): x2 = tuple(x)
         x1.write(s, (n1, n2), color=x2)
         return (x1,win1.getkey())
 
     @staticmethod ### Z ###
-    def word_Z(f):
+    def word_Z(e, t, c):
 
         from ezcurses import Cursed
 

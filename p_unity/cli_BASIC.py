@@ -79,12 +79,12 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
             self.running = v
         e.exit = exit
 
-        e.word("Q", lambda f: f.exit(f,0))
-        e.word("BYE", lambda f: f.exit(f,0))
-        e.word("QUIT", lambda f: f.exit(f,0))
+        e.word("Q", lambda e, t, s: e.exit(f,0))
+        e.word("BYE", lambda e, t, s: e.exit(f,0))
+        e.word("QUIT", lambda e, t, s: e.exit(f,0))
 
-        e.word("S", lambda f: f.exit(f,1))
-        e.word("STOP", lambda f: f.exit(f,1))
+        e.word("S", lambda e, t, s: e.exit(f,1))
+        e.word("STOP", lambda e, t, s: e.exit(f,1))
 
         v = ["p-unity BASIC v42.01"]
         p, f = e.TEST.p_count, e.TEST.f_count
@@ -101,11 +101,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
             line = input("")
             line = line.strip()
 
-            #try:
-            e.execute(line.split(), rollback=True, push_frame=False)
-            #except Exception as ex:
-            #    details = str(ex)
-            #    rich.print(f"[bold red]{details}[/]")
+            e.execute(line)
 
             print("=> ", end="")
             for object in e.stack:

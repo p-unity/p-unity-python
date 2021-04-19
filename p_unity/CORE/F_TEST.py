@@ -24,40 +24,41 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { Testing, TESTING, 123 : words }
 
-    def __init__(self, f, **kwargs):
+    def __init__(self, e, **kwargs):
         self.p_count = 0
         self.f_count = 0
 
     @staticmethod ### T{ ###
-    def word_T_lbrace(f):
-        f.__test_bang = False
-        f.__test = f.stack
-        f.stack = copy.deepcopy(f.__test)
+    def word_T_lbrace(e, t, c):
+        stack = copy.deepcopy(t.stack)
+        c.stack.append({"m":"TEST", "STACK":t.stack})
+        t.stack = stack
 
     @staticmethod ### T{! ###
-    def word_T_lbrace_bang(f):
-        f.__test_bang = True
-        f.__test = f.stack
-        f.stack = copy.deepcopy(f.__test)
+    def word_T_lbrace_bang(e, t, c):
+        stack = copy.deepcopy(t.stack)
+        c.stack.append({"m":"TEST!", "STACK":t.stack})
+        t.stack = stack
 
     @staticmethod ### -> ###
-    def word_minus_rangle(f):
-        f.__test_need = f.stack[len(f.__test):]
-        f.stack = copy.deepcopy(f.__test)
+    def word_minus_rangle(e, t, c):
+        block = c.stack[-1]
+        block["HAVE"] = t.stack[len(block["STACK"]):]
+        t.stack = copy.deepcopy(block["STACK"])
 
     @staticmethod ### }T ###
-    def word_rbrace_T(f):
-        have = f.stack[len(f.__test):]
-        need = f.__test_need
-        if have == need:
-            f.TEST.p_count += 1
+    def word_rbrace_T(e, t, c):
+        block = c.stack.pop()
+        block["NEED"] = t.stack[len(block["STACK"]):]
+        if block["HAVE"] == block["NEED"]:
+            e.TEST.p_count += 1
         else:
-            f.TEST.f_count += 1
-            need = repr(need)
-            have = repr(have)
-            print(f"INCORRECT RESULT: {need} ~= {have}")
-        f.stack = f.__test
+            e.TEST.f_count += 1
+            have = repr(block["HAVE"])
+            need = repr(block["NEED"])
+            print(f"INCORRECT RESULT: {have} ~= {need}")
 
+        t.stack = block["STACK"]
 
 import copy
 

@@ -27,10 +27,10 @@ class LIB: # { Input / Output : words }
     """
     """
 
-    def __init__(self, f, **kwargs):
+    def __init__(self, e, **kwargs):
         pass
 
     @staticmethod ### PRINT ###
-    def word_PRINT__R(f, x):
-        print(o)
+    def word_PRINT__R(e, t, c, x):
+        print(x)
 
