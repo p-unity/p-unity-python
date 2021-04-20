@@ -130,6 +130,54 @@ class LIB: # { Mathematical : words }
         ""
         return (Decimal("-Infinity"),)
 
+
+    @staticmethod ### AND ###
+    def word_AND__R_n3(e, t, c, n1, n2):
+        """
+        T{ 0 0 AND -> 0 }T
+        T{ 0 1 AND -> 0 }T
+        T{ 1 0 AND -> 0 }T
+        T{ 1 1 AND -> 1 }T
+        """
+        return (n1 & n2,)
+
+    @staticmethod ### OR ###
+    def word_OR__R_n3(e, t, c, n1, n2):
+        """
+        """
+        return (n1 | n2,)
+
+    @staticmethod ### XOR ###
+    def word_XOR__R_n3(e, t, c, n1, n2):
+        """
+        """
+        return (n1 ^ n2,)
+
+    @staticmethod ### RSHIFT ###
+    def word_RSHIFT__R_n3(e, t, c, n1, n2):
+        """
+        """
+        return (n1 >> n2,)
+
+    @staticmethod ### LSHIFT ###
+    def word_LSHIFT__R_n3(e, t, c, n1, n2):
+        """
+        """
+        return (n1 << n2,)
+
+    @staticmethod ### 2* ###
+    def word_2_times__R_n2(e, t, c, n1):
+        """
+        """
+        return (n1 << 1,)
+
+    @staticmethod ### 2/ ###
+    def word_2_divide__R_n2(e, t, c, n1):
+        """
+        """
+        return (n1 >> 1,)
+
+
 import math
 
 from decimal import Decimal

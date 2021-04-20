@@ -29,43 +29,22 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         self.run_tests = run_tests # None/0, 1=Sanity, 2=&Smoke
 
         self.root = EngineTask(self, root=True)
+        self.call = EngineCall(self, root=True)
 
         self.digits = {}
         for digit in "#$%-01234567890":
             self.digits[digit] = True
 
-        self.TEST = F_TEST.LIB(self)
-        self.add_words(self.TEST)
+        def load(self, names):
+            for name in names.split(' '):
+                exec(f"from .CORE import F_{name}")
+                exec(f"self.{name} = F_{name}.LIB(self)")
+                exec(f"self.add_words(self.{name})")
 
-        self.NUCLEUS = F_NUCLEUS.LIB(self)
-        self.add_words(self.NUCLEUS)
-
-        self.DSTACK = F_DSTACK.LIB(self)
-        self.add_words(self.DSTACK)
-
-        self.CONTROL = F_CONTROL.LIB(self)
-        self.add_words(self.CONTROL)
-
-        self.REPL = F_REPL.LIB(self)
-        self.add_words(self.REPL)
-
-        self.IO = F_IO.LIB(self)
-        self.add_words(self.IO)
-
-        self.MATH = F_MATH.LIB(self)
-        self.add_words(self.MATH)
-
-        self.OBJECT = F_OBJECT.LIB(self)
-        self.add_words(self.OBJECT)
-
-        self.JSON = F_JSON.LIB(self)
-        self.add_words(self.JSON)
-
-        self.ASCII = F_ASCII.LIB(self)
-        self.add_words(self.ASCII)
-
-        self.CURSES = F_CURSES.LIB(self)
-        self.add_words(self.CURSES)
+        load(self, 'NUCLEUS STACK MATH CONTROL')
+        load(self, 'INPUT OUTPUT REPL')
+        load(self, 'OBJECT JSON')
+        load(self, 'ASCII CURSES')
 
         if self.run_tests and self.run_tests >= 2:
            self.execute(smoke_tests)
@@ -86,8 +65,8 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         "under": "_", "tilde": "~", "minus": "-", "plus": "+",
         "percent": "%", "carat": "^", "amper": "&", "times": "*",
         "bang": "!", "at": "@", "hash": "#", "dollar": "$",
-        "lsquare": "[", "rsquare": "]", "lbrace": "{", "rbrace": "}",
-        "lbracket": "(", "rbracket": ")", "langle": "<", "rangle": ">",
+        "lbracket": "[", "rbracket": "]", "lbrace": "{", "rbrace": "}",
+        "lparen": "(", "rparen": ")", "langle": "<", "rangle": ">",
         "pipe": "|", "slash": "\\", "divide": "/", "qmark": "?",
         "unicorn": "\u1F984", "rainbow": "\u1F308",
         "astonished": "\u1F632"
@@ -98,7 +77,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         self.root.words[name] = code
 
     def add_words(self, source):
-
         word_names = []
         sigil_names = []
         for fname in dir(source):
@@ -109,7 +87,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             if len(parts) > 1 and parts[0][:5] == 'sigil':
                 sigil = getattr(source, fname)
                 sigil_names.append((sigil.__code__.co_firstlineno, fname))
-
 
         sigil_names.sort()
         for order, fname in sigil_names:
@@ -132,7 +109,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
             if self.run_tests and sigil.__doc__:
                 self.execute_tests(sigil.__doc__)
-
 
         word_names.sort()
         for order, fname in word_names:
@@ -208,7 +184,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
         if not isinstance(token, str):
             if isinstance(token, tuple):
-                t.stack.append(token[0])
+                t.stack.extend(token)
             else:
                 t.stack.append(token)
             return
@@ -265,7 +241,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
     @staticmethod
     def execute_tokens(e, t, c, tokens):
         for token in tokens:
-            if token in ["#", "\\"]:
+            if token in ["#"]:
                 break
             t.state(e, t, c, token)
             if c.EXIT:
@@ -276,22 +252,24 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         call = EngineCall(self)
         for line in tests.split("\n"):
             line = line.strip()
-            if line == "" or line[0] in ["#", "\\"]:
+            if line == "" or line[0] in ["#"]:
                 continue
-            f_count = self.TEST.f_count
+            f_count = task.f_count
             self.execute_tokens(self, task, call, line.split())
-            if not f_count == self.TEST.f_count:
+            if not f_count == task.f_count:
                 print(line)
 
     def execute(self, lines):
-        call = EngineCall(self)
+        self.call.EXIT = False
         for line in lines.split("\n"):
+            self.root.line += 1
+            self.root.lines[self.root.line] = line
             line = line.strip()
-            if len(line) == 0 or line[0] in ["#", "\\"]:
+            if len(line) == 0 or line[0] in ["#"]:
                 continue
             for token in line.split():
-                self.root.state(self, self.root, call, token)
-                if call.EXIT:
+                self.root.state(self, self.root, self.call, token)
+                if self.call.EXIT:
                     return
 
 
@@ -310,18 +288,27 @@ class EngineTask:
 
         self.words = {}
         self.words_argc = {}
+        self.words_meta = {}
 
         self.sigils = {}
 
         self.squote_space = "'"
 
+        self.line = 0
+        self.lines = {}
+
+        self.f_count = 0
+        self.p_count = 0
+
         self.state = engine.state_INTERPRET
 
 class EngineCall:
 
-    def __init__(self, engine):
+    def __init__(self, engine, root=False):
 
         self.engine = engine
+
+        self.root = root
 
         self.depth = 0
 
@@ -340,19 +327,7 @@ class ForthSyntaxException(ForthException):
 class ForthRuntimeException(ForthException):
     pass
 
-import dis, copy, collections, simplejson
-
 from decimal import Decimal
-
-from .CORE import F_TEST
-from .CORE import F_NUCLEUS, F_REPL
-from .CORE import F_DSTACK, F_CONTROL
-from .CORE import F_MATH, F_IO
-from .CORE import F_OBJECT
-from .CORE import F_CURSES
-from .CORE import F_JSON, F_ASCII
-
-
 
 smoke_tests = """
 

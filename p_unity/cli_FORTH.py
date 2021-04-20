@@ -87,7 +87,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         e.add_word("S", S)
 
         v = ["p-unity FORTH v42.01"]
-        p, f = e.TEST.p_count, e.TEST.f_count
+        p, f = e.root.p_count, e.root.f_count
         if p > 0:
             v.append(f"(Sanity Tests; {p} Pass, {f} Fail)")
 
@@ -97,18 +97,19 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
         while e.running == -1:
 
-            print(" > ", end="")
+            print("\n > ", end="")
             line = input("")
             line = line.strip()
 
             e.execute(line)
 
-            print("=> ", end="")
+            print("\n=> ", end="")
             for object in e.root.stack:
                 object = repr(object)
                 print(f"{object}", end=" ")
 
-            print("")
+            print()
+
 
         print("")
         sys.exit(e.running)

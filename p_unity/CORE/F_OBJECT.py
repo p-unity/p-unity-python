@@ -37,7 +37,7 @@ class LIB: # { The Object ABI : words }
         return (x, not x,)
 
     @staticmethod ### [[ ###
-    def word_lsquare_lsquare(e, t, c):
+    def word_lbracket_lbracket(e, t, c):
         c.stack.append(0)
         c.stack.append(None)
         c.stack.append(len(t.stack))
@@ -49,7 +49,7 @@ class LIB: # { The Object ABI : words }
             t.stack.pop()
 
     @staticmethod ### ]] ###
-    def word_rbracket_rbracket__R_x(e, t, c):
+    def word_rparen_rparen__R_x(e, t, c):
 
         if c.stack[-3] == 0: # 0 is object on stack
             o = t.stack[c.stack[-1] - 1]
@@ -65,11 +65,11 @@ class LIB: # { The Object ABI : words }
 
 
     #@staticmethod ### (~. ###
-    #def sigil_lbracket_tilde_dot(e, t, c, token, start=False):
-    #    return e.OBJECT.sigil_lbracket_dot(e, t, c, token, start, invert=True)
+    #def sigil_lparen_tilde_dot(e, t, c, token, start=False):
+    #    return e.OBJECT.sigil_lparen_dot(e, t, c, token, start, invert=True)
 
     @staticmethod ### (. ###
-    def sigil_lbracket_dot(self, token, start=False):
+    def sigil_lparen_dot(self, token, start=False):
         end = token[-1] == ")"
         if end:
             token = token[:-1]

@@ -34,19 +34,19 @@ class LIB: # { JavaScript Object Notation : words }
         pass
 
     @staticmethod ### ([ ###
-    def sigil_lbracket_lsquare(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_lbracket(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod ### ({ ###
-    def sigil_lbracket_lbrace(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_lbrace(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod ### (( ###
-    def sigil_lbracket_lbracket(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_lparen(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod ### (" ###
-    def sigil_lbracket_dquote(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_dquote(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod

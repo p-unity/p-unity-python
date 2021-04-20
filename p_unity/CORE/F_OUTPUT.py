@@ -32,5 +32,9 @@ class LIB: # { Input / Output : words }
 
     @staticmethod ### PRINT ###
     def word_PRINT__R(e, t, c, x):
-        print(x)
+        print(x, end="")
+
+    @staticmethod ### CR ###
+    def word_CR__R(e, t, c):
+        print()
 

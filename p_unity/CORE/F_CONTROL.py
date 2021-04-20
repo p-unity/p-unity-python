@@ -54,7 +54,7 @@ class LIB: # { Control Flow : words }
 
     @staticmethod ### BEGIN ###
     def word_BEGIN(e, t, c):
-        c.stack.append({"TOKENS":[], "r":t.state})
+        c.stack.append({"?":"BEGIN", "TOKENS":[], "r":t.state})
         t.state = e.CONTROL.state_BEGIN
 
     @staticmethod
@@ -72,7 +72,6 @@ class LIB: # { Control Flow : words }
         if not seen_BEGIN:
             e.raise_SyntaxError("REPEAT: error(-0): No BEGIN")
 
-        block = c.stack.pop()
         while True:
             t.state = e.state_INTERPRET
             t.execute(block["TOKENS"])
@@ -184,69 +183,6 @@ class LIB: # { Control Flow : words }
     @staticmethod ### END_IF ###
     def word_END_IF__R(e, t, c):
         e.CONTROL.impl_IF(e, t, c)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @staticmethod ### < ###
-    def word_langle__R_b(e, t, c, x1, x2):
-        return (x1 < x2,)
-
-    @staticmethod ### <= ###
-    def word_langle_equal__R_b(e, t, c, x1, x2):
-        return (x1 <= x2,)
-
-    @staticmethod ### > ###
-    def word_rangle__R_b(e, t, c, x1, x2):
-        return (x1 > x2,)
-
-    @staticmethod ### >= ###
-    def word_rangle_equal__R_b(e, t, c, x1, x2):
-        return (x1 >= x2,)
-
-    @staticmethod ### <> ###
-    def word_langle_rangle__R_b(e, t, c, x1, x2):
-        return (x1 != x2,)
-
-    @staticmethod ### ~= ###
-    def word_tilde_equal__R_b(e, t, c, x1, x2):
-        return (x1 != x2,)
-
-    @staticmethod ### != ###
-    def word_bang_equal__R_b(e, t, c, x1, x2):
-        return (x1 != x2,)
-
-    @staticmethod ### 0= ###
-    def word_0_equal__R_b(e, t, c, x):
-        """
-        T{ 0 0= -> <true> }T
-        T{ 0.0 0= -> <true> }T
-        T{ 0.0j 0= -> <true> }T
-        """
-        return (x == 0,)
-
-    @staticmethod ### 0< ###
-    def word_0_langle__R_b(e, t, c, x):
-        return (x < 0,)
-
-    @staticmethod ### 0> ###
-    def word_0_rangle__R_b(e, t, c, x):
-        return (x > 0,)
-
-
-from collections import namedtuple
-
-
 
 
 

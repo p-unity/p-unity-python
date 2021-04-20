@@ -87,7 +87,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         e.word("STOP", lambda e, t, s: e.exit(f,1))
 
         v = ["p-unity BASIC v42.01"]
-        p, f = e.TEST.p_count, e.TEST.f_count
+        p, f = t.root.p_count, t.root.f_count
         if p > 0:
             v.append(f"(Tests; {p} Pass, {f} Fail)")
 

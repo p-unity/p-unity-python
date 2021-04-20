@@ -29,12 +29,26 @@ class LIB: # { By the Power of Introspection : words }
 
     @staticmethod ### . ###
     def word_dot__R(e, t, c, x):
-        print(f" {x}")
+        print(f"{x} ", end="")
 
-    @staticmethod ### .. ###
-    def word_dot_dot__R_x(e, t, c, x):
+    @staticmethod ### .S ###
+    def word_dot_S__R_x(e, t, c, x):
         print(f" {x}")
         return (x,)
+
+    @staticmethod ### WORDS ###
+    def word_WORDS(e, t, c):
+        words = {}
+        for name in e.root.words.keys():
+            words[name] = True
+        for name in t.words.keys():
+            words[name] = True
+        for name in e.root.sigils.keys():
+            words[name] = True
+        for name in t.sigils.keys():
+            words[name] = True
+        words = sorted(words)
+        print(" ".join(words))
 
     @staticmethod ### SEE ###
     def word_SEE(e, t, c):
