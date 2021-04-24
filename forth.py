@@ -22,6 +22,5 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 """ # __banner__
 
 
-import p_unity.cli_FORTH
-p_unity.cli_FORTH.ide_stdio()
+import p_unity.cli_FORTH; p_unity.cli_FORTH.ide_stdio()
 

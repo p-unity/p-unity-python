@@ -34,7 +34,7 @@ class LIB: # { JavaScript Object Notation : words }
         pass
 
     @staticmethod ### ([ ###
-    def sigil_lparen_lbracket(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_lbrack(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod ### ({ ###

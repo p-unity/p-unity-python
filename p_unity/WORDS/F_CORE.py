@@ -5,12 +5,12 @@
 __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
                     License SPDX: Programming-Unity-10.42 or as negotiated.
 
-     _      _   _   _    _    _____   _        ______   _    _    _____
-  /\| |/\  | \ | | | |  | |  / ____| | |      |  ____| | |  | |  / ____|
-  \ ` ' /  |  \| | | |  | | | |      | |      | |__    | |  | | | (___
- |_     _| | . ` | | |  | | | |      | |      |  __|   | |  | |  \___ \
-  / , . \  | |\  | | |__| | | |____  | |____  | |____  | |__| |  ____) |
-  \/|_|\/  |_| \_|  \____/   \_____| |______| |______|  \____/  |_____/
+     _       _____    ____    _____    ______
+  /\| |/\   / ____|  / __ \  |  __ \  |  ____|
+  \ ` ' /  | |      | |  | | | |__) | | |__
+ |_     _| | |      | |  | | |  _  /  |  __|
+  / , . \  | |____  | |__| | | | \ \  | |____
+  \/|_|\/   \_____|  \____/  |_|  \_\ |______|
 
 
 
@@ -22,20 +22,10 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 """ # __banner__
 
-class LIB: # { Nucleus : words }
-
-    """
-
-0 999999 !
-
-: TEN 10 ;
-
-T{ TEN -> 10 }T
-
-    """
+class LIB: # { CORE : words }
 
     def __init__(self, e, **kwargs):
-        pass
+        e.tests_1.append(__tests_1__)
 
     @staticmethod ### ( ###
     def sigil_lparen(e, t, c, token, start=False):
@@ -44,13 +34,12 @@ T{ TEN -> 10 }T
             t.state = e.state_INTERPRET
             return
 
-        t.state = e.NUCLEUS.sigil_lparen
-
+        t.state = e.CORE.sigil_lparen
 
     @staticmethod ### \ ###
     def sigil_slash(e, t, c, token, start=False):
         c.stack.append({"?":"SLASH", "LINE":t.line, "r":t.state})
-        t.state = e.NUCLEUS.state_slash
+        t.state = e.CORE.state_slash
 
     @staticmethod
     def state_slash(e, t, c, token):
@@ -84,17 +73,44 @@ T{ TEN -> 10 }T
     @staticmethod ### }T ###
     def word_rbrace_T(e, t, c):
         block = c.stack.pop()
-        block["NEED"] = t.stack[len(block["STACK"]):]
-        if block["HAVE"] == block["NEED"]:
-            t.p_count += 1
-        else:
-            t.f_count += 1
-            have = repr(block["HAVE"])
-            need = repr(block["NEED"])
-            line = t.lines.get(t.line, "")
-            print(f"INCORRECT RESULT: {have} ~= {need} {line}")
+        assert block["?"] == "TEST"
 
+        have = block["HAVE"]
+        need = t.stack[len(block["STACK"]):]
         t.stack = block["STACK"]
+
+        if need == have:
+            t.p_count += 1
+            return
+
+        line = t.lines.get(t.line, "")
+
+        if not len(need) == len(have):
+            t.f_count += 1
+            print(f"WRONG NUMBER OF RESULTS: {have} ~= {need} {line}")
+            return
+
+        equal = True
+        for i in range(0, len(need)):
+            if isinstance(need[i], bool):
+                if need[i]:
+                    equal = True if have[i] else False
+                else:
+                    equal = True if not have[i] else False
+            elif isinstance(have[i], bool):
+                if have[i]:
+                    equal = True if need[i] else False
+                else:
+                    equal = True if not need[i] else False
+            else:
+                equal = need[i] == have[i]
+
+            if not equal:
+                break
+
+        if not equal:
+            t.f_count += 1
+            print(f"INCORRECT RESULT: {have} ~= {need} {line}")
 
 
     @staticmethod ### <TRUE> ###
@@ -116,7 +132,7 @@ T{ TEN -> 10 }T
         return (None,)
 
     @staticmethod ### <NIL> ###
-    def word_langle_NULL_rangle__R_b(e, t, c):
+    def word_langle_NIL_rangle__R_b(e, t, c):
         return (None,)
 
 
@@ -132,7 +148,7 @@ T{ TEN -> 10 }T
     @staticmethod ### TESTING ###
     def word_TESTING__R(e, t, c):
         c.stack.append({"?":"TESTING", "LINE":t.line, "r":t.state})
-        t.state = e.NUCLEUS.state_TESTING
+        t.state = e.CORE.state_TESTING
 
     @staticmethod
     def state_TESTING(e, t, c, token):
@@ -195,8 +211,6 @@ T{ TEN -> 10 }T
     def word_bang_equal__R_b(e, t, c, x1, x2):
         return (x1 != x2,)
 
-
-
     @staticmethod ### 0= ###
     def word_0_equal__R_b(e, t, c, x):
         """
@@ -219,7 +233,7 @@ T{ TEN -> 10 }T
     @staticmethod ### ." ###
     def word_dot_dquote(e, t, c):
         c.stack.append({"m":"DOT_QUOTE", "PARTS":[]})
-        t.state = e.NUCLEUS.state_dot_dquote
+        t.state = e.CORE.state_dot_dquote
 
     @staticmethod
     def state_dot_dquote(e, t, c, token):
@@ -235,12 +249,55 @@ T{ TEN -> 10 }T
             t.state = e.state_INTERPRET
             return
 
-        t.state = e.NUCLEUS.state_dot_dquote
+        t.state = e.CORE.state_dot_dquote
+
 
     @staticmethod ### : ###
     def word_colon(e, t, c):
-        c.stack.append({"m":"COMPILE", "NAME":None, "...":[], "#":None})
-        t.state = e.NUCLEUS.state_COMPILE_NAME
+
+        for index in range(-1, (len(c.stack) * -1) - 1, -1):
+            if " : " in c.stack[index]:
+                c.stack[index][" : "](e, t, c)
+                return
+
+        c.stack.append({"?":":", "NAME":None, "...":[], "#":None})
+        t.state = e.CORE.state_COMPILE_NAME
+
+
+    @staticmethod ### CREATE ###
+    def word_CREATE__R(e, t, c):
+        t.state = e.CORE.state_CREATE
+
+    @staticmethod
+    def state_CREATE(e, t, c, token):
+        """
+        T{ CREATE CR1 -> }T
+        T{ CR1   -> HERE }T
+        """
+        t.last_create = token.upper()
+        t.words[t.last_create] = (t.here,)
+        t.state = e.state_INTERPRET
+
+
+    @staticmethod ### DOES> ###
+    def word_DOES_rangle(e, t, c):
+        c.stack.append({"?":"DOES>", "#":t.call_count, "r":t.state})
+        t.state = e.CORE.state_DOES
+
+    @staticmethod
+    def state_DOES(e, t, c, token):
+        struct = c.stack[-1]; assert struct["?"] == "DOES>"
+
+        if struct["#"] == t.call_count:
+            does = t.word_does.get(t.last_create, [])
+            does.append(token)
+            t.word_does[t.last_create] = does
+            return
+
+        c.stack.pop()
+        t.state = sturct["r"]
+        t.state(e, t, c, token)
+
 
     @staticmethod ### ; ###
     def word_semicolon(e, t, c):
@@ -255,7 +312,7 @@ T{ TEN -> 10 }T
             return
 
         block["NAME"] = token.upper()
-        t.state = e.NUCLEUS.state_COMPILE_TOKENS
+        t.state = e.CORE.state_COMPILE_TOKENS
 
     @staticmethod
     def state_COMPILE_TOKENS(e, t, c, token):
@@ -264,13 +321,11 @@ T{ TEN -> 10 }T
             c.stack.pop()
             name = block["NAME"]
             tokens = block["..."]
-            if len(tokens) == 0:
-                del t.words[name]
-            else:
-                t.words[name] = tokens
-
+            t.words[name] = tokens
             t.state = e.state_INTERPRET
             return
+
+        token_u = token.upper()
 
         if token == "#" or token == "\\":
             block["#"] = t.line
@@ -283,14 +338,23 @@ T{ TEN -> 10 }T
 
         block["..."].append(token)
 
-        t.state = e.NUCLEUS.state_COMPILE_TOKENS
 
-
+    @staticmethod ### CHAR+ ###
+    def word_CHAR_plus__R_a2(e, t, c, a1):
+        return (a1 + 1,)
 
     @staticmethod ### ! ###
-    def word_bang__M__R(e, t, c, x, a):
+    def word_bang__R(e, t, c, x, a):
         ""
+        if isinstance(a, int) and a >= 1_000_000:
+            if not t.is_root:
+                e.raise_RuntimeError("!: error(-1): Illegal Memory Access")
 
+        t.memory[a] = x
+
+    @staticmethod ### C! ###
+    def word_C_bang__M__R(e, t, c, x, a):
+        ""
         if isinstance(a, int) and a >= 1_000_000:
             if not t.is_root:
                 e.raise_RuntimeError("!: error(-1): Illegal Memory Access")
@@ -298,9 +362,29 @@ T{ TEN -> 10 }T
         t.memory[a] = x
 
 
+
+    @staticmethod ### 2! ###
+    def word_2_bang__M__R(e, t, c, x1, x2, a):
+        ""
+        if isinstance(a, int) and a >= 1_000_000:
+            if not t.is_root:
+                e.raise_RuntimeError("!: error(-1): Illegal Memory Access")
+
+        t.memory[a] = x1
+        t.memory[a+1] = x2
+
     @staticmethod ### @ ###
     def word_at__R_x(e, t, c, a):
         t.stack.append(t.memory.get(a,0))
+
+    @staticmethod ### C@ ###
+    def word_C_at__R_x(e, t, c, a):
+        t.stack.append(t.memory.get(a,0))
+
+    @staticmethod ### 2@ ###
+    def word_2_at__R_x(e, t, c, a):
+        t.stack.append(t.memory.get(a,0))
+        t.stack.append(t.memory.get(a+1,0))
 
 
     @staticmethod ### @NONE ###
@@ -317,13 +401,13 @@ T{ TEN -> 10 }T
         T{ v2 -> -999 }T
         """
         c.stack.append({"?":"VALUE", "x":x})
-        t.state = e.NUCLEUS.state_VALUE
+        t.state = e.CORE.state_VALUE
 
     @staticmethod
     def state_VALUE(e, t, c, token):
         struct = c.stack.pop()
         assert struct["?"] == "VALUE"
-        t.words[token.upper()] = [(struct["x"],),]
+        t.words[token.upper()] = (struct["x"],)
         t.state = e.state_INTERPRET
 
 
@@ -333,7 +417,7 @@ T{ TEN -> 10 }T
         """
         """
         c.stack.append({"?":"LOCALS|"})
-        t.state = e.NUCLEUS.state_LOCALS_pipe
+        t.state = e.CORE.state_LOCALS_pipe
 
     @staticmethod
     def state_LOCALS_pipe(e, t, c, token):
@@ -344,7 +428,7 @@ T{ TEN -> 10 }T
             return
 
         t.words[token.upper()] = [(t.stack.pop(),),]
-        t.state = e.NUCLEUS.state_LOCALS_pipe
+        t.state = e.CORE.state_LOCALS_pipe
 
 
 
@@ -359,7 +443,7 @@ T{ TEN -> 10 }T
         T{ vd1          -> 222 }T
         """
         c.stack.append({"?":"TO", "x":x})
-        t.state = e.NUCLEUS.state_TO
+        t.state = e.CORE.state_TO
 
     @staticmethod
     def state_TO(e, t, c, token):
@@ -380,7 +464,7 @@ T{ TEN -> 10 }T
         T{ Y123              -> 123 }T
         """
         c.stack.append(x)
-        t.state = e.NUCLEUS.state_CONSTANT
+        t.state = e.CORE.state_CONSTANT
 
     @staticmethod
     def state_CONSTANT(e, t, c, token):
@@ -395,7 +479,7 @@ T{ TEN -> 10 }T
         T{    123 V1 ! ->     }T
         T{        V1 @ -> 123 }T
         """
-        t.state = e.NUCLEUS.state_VARIABLE
+        t.state = e.CORE.state_VARIABLE
 
     @staticmethod
     def state_VARIABLE(e, t, c, token):
@@ -435,14 +519,23 @@ T{ TEN -> 10 }T
         return (n1 - 2,)
 
 
-    @staticmethod ### CREATE ###
-    def word_CREATE__R(e, t, c):
-        t.state = e.NUCLEUS.static_CREATE
+    @staticmethod ### CELL+ ###
+    def word_CELL_plus__R_a2(e, t, c, a1):
+        """
+        """
+        return (a1 + 1,)
 
-    @staticmethod
-    def static_CREATE(e, t, c, token):
-        t.words[token.upper()] = [(t.here,),]
-        t.state = e.state_INTERPRET
+    @staticmethod ### ALIGNED ###
+    def word_ALIGNED__R_a2(e, t, c, a1):
+        """
+        """
+        return (a1,)
+
+    @staticmethod ### ALIGN ###
+    def word_ALIGN__R_a2(e, t, c):
+        """
+        """
+        pass
 
     @staticmethod ### HERE ###
     def word_HERE__R_a(e, t, c):
@@ -469,13 +562,46 @@ T{ TEN -> 10 }T
         t.here = t.here + n
 
 
-    @staticmethod ### , ###
-    def word_comma__R(e, t, c, x):
+    @staticmethod ### C, ###
+    def word_C_comma__R(e, t, c, x):
         t.memory[t.here] = x
         t.here += 1
 
 
+    @staticmethod ### , ###
+    def word_comma__R(e, t, c, x):
+
+        for index in range(-1, (len(c.stack) * -1) - 1, -1):
+            if " , " in c.stack[index]:
+                c.stack[index][" x "] = x
+                c.stack[index][" , "](e, t, c)
+                return
+
+        t.memory[t.here] = x
+        t.here += 1
+
+    @staticmethod ### ,, ###
+    def word_comma_comma__R(e, t, c, x):
+        t.memory[t.here] = x
+        t.here += 1
+
 
 import copy
 
+__tests_1__ = """
+
+0 999999 !
+
+: TEN 10 ;
+
+T{ TEN -> 10 }T
+
+T{ : DOES1 DOES> @ 1 + ; -> }T
+T{ : DOES2 DOES> @ 2 + ; -> }T
+T{ CREATE CR1 -> }T
+T{ CR1   -> HERE }T
+T{ 1 ,   ->   }T
+T{ CR1 @ -> 1 }T
+
+    """
 

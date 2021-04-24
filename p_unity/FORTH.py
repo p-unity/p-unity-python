@@ -24,9 +24,10 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
-    def __init__(self, run_tests=None, autoexec=None):
+    def __init__(self, run=None, run_tests=0, **kwargs):
 
-        self.run_tests = run_tests # None/0, 1=Sanity, 2=&Smoke
+        self.run_tests = run_tests # 0, 1=Sanity, 2=&Smoke
+        self.tests_1 = []; self.tests_2 = []; self.tests_3 = []
 
         self.root = EngineTask(self, root=True)
         self.call = EngineCall(self, root=True)
@@ -37,20 +38,27 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
         def load(self, names):
             for name in names.split(' '):
-                exec(f"from .CORE import F_{name}")
+                exec(f"from .WORDS import F_{name}")
                 exec(f"self.{name} = F_{name}.LIB(self)")
                 exec(f"self.add_words(self.{name})")
 
-        load(self, 'NUCLEUS STACK MATH CONTROL')
+        load(self, 'CORE STACK MATH CONTROL')
         load(self, 'INPUT OUTPUT REPL')
         load(self, 'OBJECT JSON')
         load(self, 'ASCII CURSES')
 
-        if self.run_tests and self.run_tests >= 2:
-           self.execute(smoke_tests)
+        if self.run_tests >= 1:
+            self.execute_tests(__tests_1__)
+            for test in self.tests_1:
+                self.execute_tests(test if test else "")
 
-        if autoexec:
-           self.execute(autoexec)
+        if self.run_tests >= 2:
+            self.execute_tests(__tests_2__)
+            for test in self.tests_2:
+                self.execute_tests(test if test else "")
+
+        if run:
+           self.execute(run)
 
     def raise_SyntaxError(self, details):
         raise ForthSyntaxException(details)
@@ -60,14 +68,15 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
     __word_map = {
 
+        "bang": "!", "at": "@", "hash": "#", "dollar": "$",
+        "under": "_", "tilde": "~", "minus": "-", "plus": "+",
+        "pipe": "|", "slash": "\\", "divide": "/", "qmark": "?",
         "colon": ":", "semicolon": ";", "dot": ".", "comma": ",",
         "squote": "'", "dquote": '"', "btick": "`", "equal": "=",
-        "under": "_", "tilde": "~", "minus": "-", "plus": "+",
         "percent": "%", "carat": "^", "amper": "&", "times": "*",
-        "bang": "!", "at": "@", "hash": "#", "dollar": "$",
-        "lbracket": "[", "rbracket": "]", "lbrace": "{", "rbrace": "}",
         "lparen": "(", "rparen": ")", "langle": "<", "rangle": ">",
-        "pipe": "|", "slash": "\\", "divide": "/", "qmark": "?",
+        "lbrack": "[", "rbrack": "]", "lbrace": "{", "rbrace": "}",
+
         "unicorn": "\u1F984", "rainbow": "\u1F308",
         "astonished": "\u1F632"
 
@@ -101,6 +110,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                     name.append(self.__word_map[part])
 
             name = "".join(name)
+
             if name in self.root.sigils:
                 raise ForthException(f"{name}: error(-4): Sigil Already Defined")
 
@@ -122,11 +132,11 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 else:
                     name.append(self.__word_map[part])
 
-            # __n1_n2 - the tail contains the return spec
             if not len(name) == len(parts):
                 pass
 
             name = "".join(name)
+
             if name in self.root.words:
                 raise ForthException(f"{name}: error(-4): Word Already Defined")
 
@@ -134,14 +144,11 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             self.root.words[name] = word
             argc = word.__code__.co_argcount
             if argc > 3:
-                self.root.words_argc[name] = argc - 3
+                self.root.word_argc[name] = argc - 3
 
-            if self.run_tests and word.__doc__:
-                self.execute_tests(word.__doc__)
+            self.tests_1.append(word.__doc__)
 
-        if self.run_tests and source.__doc__:
-            self.execute_tests(source.__doc__)
-
+        self.tests_2.append(source.__doc__)
 
     @staticmethod
     def to_number(e, t, c, token):
@@ -151,6 +158,8 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
         if token in e.root.words or token in t.words:
             return (False, None)
+
+        token = token.replace("_", "")
 
         base = 10
         if token[0] == '#':
@@ -179,6 +188,8 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             else:
                 return (True, int(token, base))
 
+
+
     @staticmethod
     def state_INTERPRET(e, t, c, token):
 
@@ -189,12 +200,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 t.stack.append(token)
             return
 
-        for sigil_len in [5, 4, 3, 2, 1]:
-            sigil = token[:sigil_len].upper()
-            if sigil in e.root.sigils:
-                e.root.sigils[sigil](e, t, c, token, start=True)
-                return
-
         token_u = token.upper()
 
         is_number, value = e.to_number(e, t, c, token_u)
@@ -203,30 +208,43 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
            return
 
         if not (token_u in e.root.words or token_u in t.words):
+
+            for sigil_len in [5, 4, 3, 2, 1]:
+                sigil = token[:sigil_len].upper()
+                if sigil in e.root.sigils:
+                    e.root.sigils[sigil](e, t, c, token, start=True)
+                    return
+
             details = f"{token}: error(-13): word not found"
             raise ForthException(details)
 
         args = []
         if token_u in e.root.words:
-            argc = e.root.words_argc.get(token_u, 0)
+            argc = e.root.word_argc.get(token_u, 0)
             code = e.root.words[token_u]
         else:
-            argc = t.words_argc.get(token_u, 0)
+            argc = t.word_argc.get(token_u, 0)
             code = t.words[token_u]
 
         if isinstance(code, list):
+            t.call_count += 1
             if c.depth == 0:
                 c.depth += 1
                 e.execute_tokens(e, t, c, code)
                 c.depth -= 1
             else:
                 e.execute_tokens(e, t, EngineCall(e), code)
-
             return
 
-        #if not callable(code):
-        #    t.stack.append(code)
-        #    return
+        if isinstance(code, tuple):
+            t.stack.extend(code)
+
+            if token_u in t.word_does:
+                does = t.word_does[token_u]
+                print("running does> ", does)
+                e.exeute_tokens(e, t, c, does)
+
+            return
 
         if argc > len(t.stack):
             details = f"{token}: error(-4): stack underflow"
@@ -255,9 +273,16 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             if line == "" or line[0] in ["#"]:
                 continue
             f_count = task.f_count
-            self.execute_tokens(self, task, call, line.split())
+            try:
+                self.execute_tokens(self, task, call, line.split())
+            except Exception as ex:
+                print(ex)
+                task.f_count += 1
             if not f_count == task.f_count:
                 print(line)
+
+        self.root.p_count += task.p_count
+        self.root.f_count += task.f_count
 
     def execute(self, lines):
         self.call.EXIT = False
@@ -278,19 +303,23 @@ class EngineTask:
     def __init__(self, engine, root=False):
 
         self.engine = engine
-
         self.is_root = root
 
         self.stack = []
+        self.rstack = []
 
         self.memory = {}
         self.here = 1_000_000 if root else 1
 
-        self.words = {}
-        self.words_argc = {}
-        self.words_meta = {}
-
         self.sigils = {}
+
+        self.words = {}
+        self.word_argc = {}
+        self.word_does = {}
+
+        self.call_count = 0
+
+        self.last_create = ""
 
         self.squote_space = "'"
 
@@ -299,21 +328,18 @@ class EngineTask:
 
         self.f_count = 0
         self.p_count = 0
+        self.x_count = 0
 
         self.state = engine.state_INTERPRET
+
 
 class EngineCall:
 
     def __init__(self, engine, root=False):
-
         self.engine = engine
-
         self.root = root
-
         self.depth = 0
-
         self.stack = []
-
         self.EXIT = False
 
 
@@ -329,7 +355,7 @@ class ForthRuntimeException(ForthException):
 
 from decimal import Decimal
 
-smoke_tests = """
+__tests_1__ = """
 
 T{ 0.1 0.2 + -> 0.3 }T
 
@@ -344,6 +370,26 @@ CURSES
 0 0 20 20 WINDOW BORDER REFRESH
 GETKEY
 ;
+
+: COUNTDOWN    ( n --)
+               BEGIN  CR   DUP  .  1 -   DUP   0  =   UNTIL  DROP  ;
+
+# 5 COUNTDOWN
+
+"""
+
+__tests_2__ = """
+
+0 CONSTANT 0S
+0 INVERT CONSTANT 1S
+
+T{ <TRUE>  -> 0 INVERT }T
+T{ <FALSE> -> 0 }T
+
+: TEN [[ 5 5 + ]] LITERAL ;
+
+
+
 
 """
 

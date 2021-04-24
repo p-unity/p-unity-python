@@ -105,12 +105,12 @@ class LIB: # { By the Power of Introspection : words }
             if not callable(e.root.words[name]):
                 show[name] = e.root.words[name]
             else:
-                show[name] = (e.root.words_argc.get(name,0))
+                show[name] = (e.root.word_argc.get(name,0))
         for name in t.words:
             if not callable(t.words[name]):
                 show[name] = t.words[name]
             else:
-                show[name] = (t.words_argc.get(name,0))
+                show[name] = (t.word_argc.get(name,0))
         print(str(show))
 
         show = {}

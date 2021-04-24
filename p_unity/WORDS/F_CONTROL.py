@@ -54,31 +54,50 @@ class LIB: # { Control Flow : words }
 
     @staticmethod ### BEGIN ###
     def word_BEGIN(e, t, c):
-        c.stack.append({"?":"BEGIN", "TOKENS":[], "r":t.state})
+        c.stack.append({"?":"BEGIN", "m":1, 1:[], 2:[], "r":t.state})
         t.state = e.CONTROL.state_BEGIN
 
     @staticmethod
+    def impl_BEGIN(e, t, c, struct):
+
+        if struct["m"] == 1:
+            while True:
+                t.state = e.state_INTERPRET
+                e.execute_tokens(e, t, c, struct[1])
+                b = t.stack.pop()
+                if b:
+                    break
+
+        t.state = struct["r"]
+
+    @staticmethod
     def state_BEGIN(e, t, c, token):
+        struct = c.stack[-1]
+        assert struct["?"] == "BEGIN"
+
         token_u = token.upper() if isinstance(token, str) else token
-        if token_u == "REPEAT":
-            e.CONTROL.word_REPEAT__R(e, t, c, seen_BEGIN=True)
+        if token_u == "UNTIL" or token_u == "REPEAT":
+            return LIB.impl_BEGIN(e, t, c, struct)
+
+        if token_u == "WHILE":
+            struct["m"] = 2
             return
 
-        c.stack[-1]["TOKENS"].append(token)
-        t.state = e.CONTROL.state_BEGIN
+        struct[struct["m"]].append(token)
 
     @staticmethod ### REPEAT ###
-    def word_REPEAT__R(e, t, c, seen_BEGIN=False):
-        if not seen_BEGIN:
-            e.raise_SyntaxError("REPEAT: error(-0): No BEGIN")
+    def word_REPEAT__R(e, t, c):
+        e.raise_SyntaxError("REPEAT: error(-0): No BEGIN")
 
-        while True:
-            t.state = e.state_INTERPRET
-            t.execute(block["TOKENS"])
-            if not t.stack.pop():
-                break
+    @staticmethod ### UNTIL ###
+    def word_UNTIL__R(e, t, c):
+        e.raise_SyntaxError("UNTIL: error(-0): No BEGIN")
 
-        t.state = block["r"]
+    @staticmethod ### WHILE ###
+    def word_WHILE__R(e, t, c):
+        e.raise_SyntaxError("WHILE: error(-0): No BEGIN")
+
+
 
 
 

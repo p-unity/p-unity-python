@@ -67,50 +67,6 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
 
     def run_stdio(self):
-
-        import rich
-
-        #keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
-
-        e = self.e
-
-        e.running = -1
-        def exit(self, v):
-            self.running = v
-        e.exit = exit
-
-        e.word("Q", lambda e, t, s: e.exit(f,0))
-        e.word("BYE", lambda e, t, s: e.exit(f,0))
-        e.word("QUIT", lambda e, t, s: e.exit(f,0))
-
-        e.word("S", lambda e, t, s: e.exit(f,1))
-        e.word("STOP", lambda e, t, s: e.exit(f,1))
-
-        v = ["p-unity BASIC v42.01"]
-        p, f = t.root.p_count, t.root.f_count
-        if p > 0:
-            v.append(f"(Tests; {p} Pass, {f} Fail)")
-
-        print("")
-        print(" ".join(v))
-        print("")
-
-        while e.running == -1:
-
-            print(" > ", end="")
-            line = input("")
-            line = line.strip()
-
-            e.execute(line)
-
-            print("=> ", end="")
-            for object in e.stack:
-                object = repr(object)
-                print(f"{object}", end=" ")
-
-            print("")
-
-        print("")
         sys.exit(e.running)
 
 

@@ -33,6 +33,10 @@ class LIB: # { Mathematical : words }
     def __init__(self, e, **kwargs):
         pass
 
+    @staticmethod ### NEGATE ###
+    def word_NEGATE__R_n2(e, t, c, n1):
+        return (n1 * -1,)
+
     @staticmethod ### + ###
     def word_plus__R_x3(e, t, c, x1, x2):
         r"""
@@ -131,6 +135,20 @@ class LIB: # { Mathematical : words }
         return (Decimal("-Infinity"),)
 
 
+    @staticmethod ### MIN ###
+    def word_MIN__R_x3(e, t, c, x1, x2):
+        """
+        """
+        return (x1,) if x1 < x2 else (x2,)
+
+    @staticmethod ### MAX ###
+    def word_MAX__R_x3(e, t, c, x1, x2):
+        """
+        """
+        return (x1,) if x1 > x2 else (x2,)
+
+
+
     @staticmethod ### AND ###
     def word_AND__R_n3(e, t, c, n1, n2):
         """
@@ -164,6 +182,7 @@ class LIB: # { Mathematical : words }
         """
         """
         return (n1 << n2,)
+
 
     @staticmethod ### 2* ###
     def word_2_times__R_n2(e, t, c, n1):
