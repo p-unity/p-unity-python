@@ -19,18 +19,18 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 
 
-"""  # __banner__
 
+""" # __banner__
 
 class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
-    def __init__(self, run=None, run_tests=0, **kwargs):
+    def __init__(self, run=None, run_tests=2, **kwargs):
 
         self.run_tests = run_tests # 0, 1=Sanity, 2=&Smoke
         self.tests_1 = []; self.tests_2 = []; self.tests_3 = []
 
-        self.root = EngineTask(self, root=True)
-        self.call = EngineCall(self, root=True)
+        self.root = TASK(self, root=True)
+        self.call = CALL(self)
 
         self.digits = {}
         for digit in "#$%-01234567890":
@@ -45,7 +45,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         load(self, 'CORE STACK MATH CONTROL')
         load(self, 'INPUT OUTPUT REPL')
         load(self, 'OBJECT JSON')
-        load(self, 'ASCII CURSES')
+        load(self, 'UNICODE CURSES')
 
         if self.run_tests >= 1:
             self.execute_tests(__tests_1__)
@@ -69,10 +69,10 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
     __word_map = {
 
         "bang": "!", "at": "@", "hash": "#", "dollar": "$",
+        "tick": "'", "quote": '"', "btick": "`", "equal": "=",
         "under": "_", "tilde": "~", "minus": "-", "plus": "+",
         "pipe": "|", "slash": "\\", "divide": "/", "qmark": "?",
         "colon": ":", "semicolon": ";", "dot": ".", "comma": ",",
-        "squote": "'", "dquote": '"', "btick": "`", "equal": "=",
         "percent": "%", "carat": "^", "amper": "&", "times": "*",
         "lparen": "(", "rparen": ")", "langle": "<", "rangle": ">",
         "lbrack": "[", "rbrack": "]", "lbrace": "{", "rbrace": "}",
@@ -81,6 +81,9 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         "astonished": "\u1F632"
 
     }
+
+    def Mark(self, **kwargs):
+        return EngineMark(self, **kwargs)
 
     def add_word(self, name, code):
         self.root.words[name] = code
@@ -125,20 +128,30 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             parts = fname.split('_')[1:]
 
             name = []
+            meta = None
             for part in parts:
-                if part == '': break
+
+                if meta == None:
+                    if part == '':
+                        meta = []
+                        continue
+                else:
+                    meta.append(part)
+                    continue
+
                 if part[0].isupper() or part[0].isdigit():
                     name.append(part.upper())
                 else:
                     name.append(self.__word_map[part])
 
-            if not len(name) == len(parts):
-                pass
-
             name = "".join(name)
 
             if name in self.root.words:
                 raise ForthException(f"{name}: error(-4): Word Already Defined")
+
+            if not meta == None:
+                if 'I' in meta[0]:
+                    self.root.word_IMMEDIATE[name] = True
 
             word = getattr(source, fname)
             self.root.words[name] = word
@@ -152,6 +165,9 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
     @staticmethod
     def to_number(e, t, c, token):
+
+        if not isinstance(token, str):
+            return (True, token)
 
         if not token[0] in e.digits:
             return (False, None)
@@ -177,7 +193,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             if not token[1].isdigit():
                 return (False, None)
 
-        if 'J' in token:
+        if 'j' in token:
             return (True, complex(token))
         else:
             if '.' in token:
@@ -187,8 +203,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                     return (True, Decimal(int(token, base)))
             else:
                 return (True, int(token, base))
-
-
 
     @staticmethod
     def state_INTERPRET(e, t, c, token):
@@ -200,12 +214,16 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 t.stack.append(token)
             return
 
-        token_u = token.upper()
-
-        is_number, value = e.to_number(e, t, c, token_u)
+        is_number, value = e.to_number(e, t, c, token)
         if is_number:
            t.stack.append(value)
            return
+
+        Engine.run(e, t, c, token)
+
+    @staticmethod
+    def run(e, t, c, token):
+        token_u = token.upper()
 
         if not (token_u in e.root.words or token_u in t.words):
 
@@ -219,12 +237,12 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             raise ForthException(details)
 
         args = []
-        if token_u in e.root.words:
-            argc = e.root.word_argc.get(token_u, 0)
-            code = e.root.words[token_u]
-        else:
-            argc = t.word_argc.get(token_u, 0)
+        if token_u in t.words:
             code = t.words[token_u]
+            argc = t.word_argc.get(token_u, 0)
+        else:
+            code = e.root.words[token_u]
+            argc = e.root.word_argc.get(token_u, 0)
 
         if isinstance(code, list):
             t.call_count += 1
@@ -233,7 +251,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 e.execute_tokens(e, t, c, code)
                 c.depth -= 1
             else:
-                e.execute_tokens(e, t, EngineCall(e), code)
+                e.execute_tokens(e, t, CALL(e, c), code)
             return
 
         if isinstance(code, tuple):
@@ -241,7 +259,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
             if token_u in t.word_does:
                 does = t.word_does[token_u]
-                print("running does> ", does)
                 e.exeute_tokens(e, t, c, does)
 
             return
@@ -255,7 +272,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
         t.stack.extend(code(e, t, c, *args) or tuple())
 
-
     @staticmethod
     def execute_tokens(e, t, c, tokens):
         for token in tokens:
@@ -265,21 +281,33 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             if c.EXIT:
                 break
 
+
     def execute_tests(self, tests):
-        task = EngineTask(self)
-        call = EngineCall(self)
+        task = TASK(self)
+        call = CALL(self, self.call)
         for line in tests.split("\n"):
             line = line.strip()
             if line == "" or line[0] in ["#"]:
                 continue
+
             f_count = task.f_count
             try:
-                self.execute_tokens(self, task, call, line.split())
+
+                call.tokens = line.split()
+                while len(call.tokens):
+                    token = call.tokens.pop(0)
+                    if token in ["#"]:
+                        break
+                    task.state(self, task, call, token)
+                    if call.EXIT:
+                        break
+
             except Exception as ex:
                 print(ex)
                 task.f_count += 1
             if not f_count == task.f_count:
                 print(line)
+
 
         self.root.p_count += task.p_count
         self.root.f_count += task.f_count
@@ -292,13 +320,16 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             line = line.strip()
             if len(line) == 0 or line[0] in ["#"]:
                 continue
-            for token in line.split():
+
+            self.call.tokens = line.split()
+            while len(self.call.tokens):
+                token = self.call.tokens.pop(0)
                 self.root.state(self, self.root, self.call, token)
                 if self.call.EXIT:
                     return
 
 
-class EngineTask:
+class TASK:
 
     def __init__(self, engine, root=False):
 
@@ -316,12 +347,15 @@ class EngineTask:
         self.words = {}
         self.word_argc = {}
         self.word_does = {}
+        self.word_DOES = {}
+        self.word_IMMEDIATE = {}
 
         self.call_count = 0
 
         self.last_create = ""
+        self.last_compile = ""
 
-        self.squote_space = "'"
+        self.tick_space = "'"
 
         self.line = 0
         self.lines = {}
@@ -333,16 +367,22 @@ class EngineTask:
         self.state = engine.state_INTERPRET
 
 
-class EngineCall:
+class CALL:
 
-    def __init__(self, engine, root=False):
+    def __init__(self, engine, parent=None):
         self.engine = engine
-        self.root = root
+        self.parent = parent
+        self.tokens = []
         self.depth = 0
         self.stack = []
         self.EXIT = False
 
+class EngineMark:
 
+    def __init__(self, engine, **kwargs):
+        self.engine = engine
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 class ForthException(Exception):
     pass
@@ -352,6 +392,8 @@ class ForthSyntaxException(ForthException):
 
 class ForthRuntimeException(ForthException):
     pass
+
+import functools
 
 from decimal import Decimal
 
@@ -386,10 +428,11 @@ __tests_2__ = """
 T{ <TRUE>  -> 0 INVERT }T
 T{ <FALSE> -> 0 }T
 
-: TEN [[ 5 5 + ]] LITERAL ;
+: TEN I[ 5 5 + ]I LITERAL ; IM...
 
+: FOO TEN ;
 
-
+T{ ' FOO -> [ 10 , ] }T
 
 """
 

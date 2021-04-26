@@ -22,5 +22,16 @@ __banner__ = """ ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 """ # __banner__
 
 
-import p_unity.cli_FORTH; p_unity.cli_FORTH.ide_stdio()
+import sys, click; sys.path.insert(0,'depends')
+import p_unity.cli_FORTH
+
+@click.command()
+@click.option("-f", "--file", default=None)
+def run(file):
+    if file:
+        file = open(file, "rt").read()
+    p_unity.cli_FORTH.ide_stdio(run=file)
+
+if __name__ == "__main__":
+    run()
 

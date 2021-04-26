@@ -33,15 +33,19 @@ class LIB: # { Control Flow : words }
     T{  0 IF 123 ELSE 234 THEN -> 234 }T
     T{  1 IF 123 ELSE 234 THEN -> 123 }T
 
-    : TEST1 IF 123 ELSE EXIT THEN 345 :
+    : TEST1 IF 123 ELSE EXIT THEN 345 ;
 
     T{ 0 TEST1 -> }T
     T{ 1 TEST1 -> 123 345 }T
 
+    # T{ : GD3 DO 1 0 DO J LOOP LOOP ; -> }T
+    # T{          4        1 GD3 ->  1 2 3   }T
 
-    # if(0) {
-    # } else {
-    # }
+    : GD1 DO I LOOP ;
+
+    T{ 5 1 GD1 -> 1 2 3 4 }T
+
+    T{ 6 2 GD1 -> 2 3 4 5 }T
 
     """
 
@@ -51,6 +55,147 @@ class LIB: # { Control Flow : words }
     @staticmethod ### EXIT ###
     def word_EXIT__R(e, t, c):
         c.EXIT = True
+
+    @staticmethod ### V ###
+    def word_V__R_x(e, t, c):
+        call = c
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "v" in call.stack[index]:
+                    return (call.stack[index]["v"],)
+            call = call.parent
+        e.raise_RuntimeError("V: error (-0): Illegal Outside 'Object' DO")
+
+    @staticmethod ### V^ ###
+    def word_V_carat__R_x(e, t, c):
+        call = c
+        outer = False
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "v" in call.stack[index]:
+                    if not outer:
+                        outer = True
+                    else:
+                        return (call.stack[index]["v"],)
+            call = call.parent
+        e.raise_RuntimeError("V^: error (-0): Illegal Outside 'Object' DO DO")
+
+    @staticmethod ### K ###
+    def word_K__R_x(e, t, c):
+        call = c
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "k" in call.stack[index]:
+                    return (call.stack[index]["k"],)
+            call = call.parent
+        e.raise_RuntimeError("K: error (-0): Illegal Outside Object DO")
+
+    @staticmethod ### K^ ###
+    def word_K_carat__R_x(e, t, c):
+        call = c
+        outer = False
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "k" in call.stack[index]:
+                    if not outer:
+                        outer = True
+                    else:
+                        return (call.stack[index]["k"],)
+            call = call.parent
+        e.raise_RuntimeError("K^: error (-0): Illegal Outside Object DO DO")
+
+    @staticmethod ### I ###
+    def word_I__R_n(e, t, c):
+        call = c
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "i2" in call.stack[index]:
+                    return (call.stack[index]["i2"],)
+            call = call.parent
+        e.raise_RuntimeError("I: error (-0): Illegal Outside DO")
+
+    @staticmethod ### J ###
+    def word_J__R_n(e, t, c):
+        call = c
+        outer = False
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if "i2" in call.stack[index]:
+                    if not outer:
+                        outer = True
+                    else:
+                        return (call.stack[index]["i2"],)
+            call = call.parent
+        e.raise_RuntimeError("J: error (-0): Illegal Outside DO DO")
+
+    @staticmethod ### DO ###
+    def word_DO__R(e, t, c):
+        struct = {"?":"DO", 1:[], "DO":0, "r":t.state}
+        c.stack.append(struct)
+
+        tos = t.stack.pop()
+        if isinstance(tos, list) or isinstance(tos, dict):
+            struct["iter"] = tos
+        else:
+            struct["i2"] = tos
+            struct["i1"] = t.stack.pop()
+
+        t.state = LIB.state_DO
+
+    @staticmethod
+    def state_DO(e, t, c, token):
+        struct = c.stack[-1]
+        assert struct["?"] == "DO"
+
+        token_u = token.upper() if isinstance(token, str) else token
+
+        if token_u == "LOOP" or token_u == "+LOOP":
+            if struct["DO"] == 0:
+                return LIB.impl_DO(e, t, c, token, struct)
+            struct["DO"] -= 1
+
+        if token_u == "DO":
+            struct["DO"] += 1
+
+        is_number, value = e.to_number(e, t, c, token)
+        if is_number:
+            struct[1].append((value,))
+        else:
+            struct[1].append(token)
+
+    @staticmethod
+    def impl_DO(e, t, c, token, struct):
+
+        t.state = e.state_INTERPRET
+
+        if "iter" in struct:
+            if token == "+LOOP":
+                e.raise_RuntimeError("LOOP+: error(-0): Only Valid on Integer Loops")
+
+            iter = struct["iter"]
+            if isinstance(iter, list):
+                for v in iter:
+                    struct["v"] = v
+                    e.execute_tokens(e, t, c, struct[1])
+
+            if isinstance(iter, dict):
+                for k in sorted(iter):
+                    struct["k"] = k
+                    struct["v"] = iter[k]
+                    e.execute_tokens(e, t, c, struct[1])
+
+        else:
+
+            while struct["i2"] < struct["i1"]:
+                e.execute_tokens(e, t, c, struct[1])
+                if token == "LOOP":
+                    struct["i2"] += 1
+                elif token == "+LOOP":
+                    struct["i2"] += t.stack.pop()
+
+        c.stack.pop()
+        t.state = struct["r"]
+
 
     @staticmethod ### BEGIN ###
     def word_BEGIN(e, t, c):
@@ -171,7 +316,13 @@ class LIB: # { Control Flow : words }
             return
 
         assert c.stack[-1]["m"] == "IF"
-        c.stack[-1][1].append(token)
+
+        is_number, value = e.to_number(e, t, c, token)
+        if is_number:
+            c.stack[-1][1].append((value,))
+        else:
+            c.stack[-1][1].append(token)
+
         t.state = e.CONTROL.state_IF_TRUE
 
     @staticmethod ### ELSE ###
@@ -191,7 +342,13 @@ class LIB: # { Control Flow : words }
             return
 
         assert c.stack[-1]["m"] == "IF"
-        c.stack[-1][0].append(token)
+
+        is_number, value = e.to_number(e, t, c, token)
+        if is_number:
+            c.stack[-1][0].append((value,))
+        else:
+            c.stack[-1][0].append(token)
+
         t.state = e.CONTROL.state_IF_TRUE
 
 

@@ -33,6 +33,16 @@ class LIB: # { JavaScript Object Notation : words }
     def __init__(self, e, **kwargs):
         pass
 
+    @staticmethod ### ARROW ###
+    def word_ARROW__R_x(e, t, c):
+        import arrow
+        return (arrow.now(),)
+
+    @staticmethod ### ULID ###
+    def word_ULID__R_x(e, t, c):
+        import ulid
+        return (ulid.new(),)
+
     @staticmethod ### ([ ###
     def sigil_lparen_lbrack(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
@@ -46,7 +56,7 @@ class LIB: # { JavaScript Object Notation : words }
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod ### (" ###
-    def sigil_lparen_dquote(e, t, c, token, *args, **kwargs):
+    def sigil_lparen_quote(e, t, c, token, *args, **kwargs):
         e.JSON.state_JSON(e, t, c, token, *args, **kwargs)
 
     @staticmethod

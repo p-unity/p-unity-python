@@ -93,11 +93,10 @@ class LIB: # { DATA Stack Manipulation : words }
         #"T{ 1 2 2DROP -> }T
         return None
 
-    @staticmethod ### DROP:ALL ###
-    def word_DROP_colon_ALL__R(e, t, c):
+    @staticmethod ### DROP-ALL ###
+    def word_DROP_minus_ALL__R(e, t, c):
         #"T{ 1 2 DROP:ALL -> }T
         t.stack = []
-        return None
 
     @staticmethod ### OVER ###
     def word_OVER__R_x1_x2_x1(e, t, c, x1, x2):

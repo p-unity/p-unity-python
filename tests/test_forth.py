@@ -457,6 +457,17 @@ T{ 1ST @ 2ND @ -> 5 6 }T
     """
 
 
+    def test_COMPILE(self):
+        e = FORTH.Engine(self.COMPILE, **self.options)
+        assert e.root.f_count == 0
+
+    COMPILE = r"""
+
+T{ : GT1 123 ; -> }T
+T{ ' GT1 EXECUTE -> 123 }T
+
+    """
+
 
 
 

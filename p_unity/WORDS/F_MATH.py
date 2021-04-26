@@ -43,12 +43,6 @@ class LIB: # { Mathematical : words }
         T{ 0.1 0.2 + -> 0.3 }T ( Simple it seems, yet complex it is )
         T{ 1.4j 2.2j + -> 3.6j }T
         """
-        if isinstance(x1, int) or isinstance(x1, Decimal):
-            return (x1 + x2,)
-
-        if isinstance(x1, complex):
-            return (x1 + x2,)
-
         if isinstance(x1, list):
             return (x1 + [x2],)
 
@@ -57,24 +51,18 @@ class LIB: # { Mathematical : words }
 
     @staticmethod ### - ###
     def word_minus__R_x3(e, t, c, x1, x2):
-        "T{ 1+0j 2+0j - -> -1+0j }T"
-        if isinstance(x1, int) or isinstance(x1, Decimal):
-            return (x1 - x2,)
-
-        if isinstance(x1, complex):
-            return (x1 - x2,)
-
+        """
+        T{ 1+0j 2+0j - -> -1+0j }T
+        T{ ([1,2,3]) 2 - -> ([1,3]) }T
+        """
         if isinstance(x1, list):
-            """
-            T{ ([1,2,3]) 2 - -> ([1,3]) }T"
-            """
             return (list(filter((x2).__ne__, x1)),)
 
         if isinstance(x1, dict):
             del x1[x2]
             return (x1,)
 
-        return (n1 - n2,)
+        return (x1 - x2,)
 
     @staticmethod ### * ###
     def word_times__R_n3(e, t, c, n1, n2):
@@ -89,7 +77,7 @@ class LIB: # { Mathematical : words }
     @staticmethod ### SQRT ###
     def word_SQRT__R_n2(e, t, c, n1):
         ""
-        return (math.sqrt(n1),)
+        return (sqrt(n1),)
 
     @staticmethod ### / ###
     def word_divide__R_n3(e, t, c, n1, n2):
@@ -124,13 +112,13 @@ class LIB: # { Mathematical : words }
         ""
         return (Decimal("Nan"),)
 
-    @staticmethod ### INFINITY ###
-    def word_INFINITY__R_n(e, t, c):
+    @staticmethod ### INF ###
+    def word_INF__R_n(e, t, c):
         ""
         return (Decimal("Infinity"),)
 
-    @staticmethod ### -INFINITY ###
-    def word_minus_INFINITY__R_n(e, t, c):
+    @staticmethod ### -INF ###
+    def word_minus_INF__R_n(e, t, c):
         ""
         return (Decimal("-Infinity"),)
 

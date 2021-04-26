@@ -39,7 +39,7 @@ class LIB: # { CURSES Text Interface : words }
 
     @staticmethod ### CURSES ###
     def word_CURSES(e, t, c):
-        pass
+        import curses
 
     @staticmethod ### KEY-MAP ###
     def word_KEY_minus_MAP__R_x(e, t, c):
@@ -114,9 +114,9 @@ class LIB: # { CURSES Text Interface : words }
 #   https://github.com/richrd/suplemon/blob/master/suplemon/key_mappings.py
 #
 
-import curses
+def get_KEY_MAP(curse):
+    return {
 
-KEY_MAP = {
     # Single keys
     curses.KEY_F1: "f1",    # 265
     curses.KEY_F2: "f2",    # 266

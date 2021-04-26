@@ -31,6 +31,10 @@ class LIB: # { By the Power of Introspection : words }
     def word_dot__R(e, t, c, x):
         print(f"{x} ", end="")
 
+    @staticmethod ### IC ###
+    def word_IC__R(e, t, c, x):
+        ic(x)
+
     @staticmethod ### .S ###
     def word_dot_S__R_x(e, t, c, x):
         print(f" {x}")

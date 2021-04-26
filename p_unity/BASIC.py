@@ -19,8 +19,8 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 
 
-"""  # __banner__
 
+""" # __banner__
 
 class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 

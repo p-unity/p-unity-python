@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
-    def __init__(self, **kwargs):
+    def __init__(self, run=None, **kwargs):
 
         try:
             from icecream import ic
@@ -34,7 +34,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         builtins = __import__('builtins')
         setattr(builtins, 'ic', ic)
 
-        self.e = FORTH.Engine(run_tests=2, **kwargs)
+        self.e = FORTH.Engine(run, **kwargs)
 
         self.c = None
         if 'stdscr' in kwargs:
@@ -65,8 +65,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         #while win1.getkey() != 'q':
         #    pass
 
-
-    def run_stdio(self):
+    def run_stdio(self, run=None):
 
         import rich
 
@@ -87,6 +86,10 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         e.add_word("S", S)
         e.add_word("BYE", S)
         e.add_word("EXIT()", S)
+
+        if run:
+            e.execute(run)
+            return
 
         v = ["p-unity FORTH v42.01"]
         p, f = e.root.p_count, e.root.f_count
@@ -125,11 +128,12 @@ def __ide_curses(stdscr):
 def ide_curses():
     wrapper(__ide_curses)
 
-def ide_stdio():
+def ide_stdio(run=None):
     ide = IDE()
-    ide.run_stdio()
+    ide.run_stdio(run=run)
     del ide
 
-import sys
+import sys, arrow
 
 from . import FORTH
+
