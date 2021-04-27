@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { By the Power of Introspection : words }
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
     @staticmethod ### . ###
@@ -61,9 +61,9 @@ class LIB: # { By the Power of Introspection : words }
     @staticmethod
     def state_SEE(e, t, c, token):
         import dis
-        word = t.words.get(token.upper(), None)
+        word = t.words.get(token.lower(), None)
         if not word:
-            e.root.words.get(token.upper(), None)
+            e.root.words.get(token.lower(), None)
         if callable(word):
             dis.show_code(word)
             dis.dis(word)
@@ -85,8 +85,8 @@ class LIB: # { By the Power of Introspection : words }
         return (x,)
 
 
-    @staticmethod ### SEE:MEM ###
-    def word_SEE_colon_MEM(e, t, c):
+    @staticmethod ### MEM ###
+    def word_MEM(e, t, c):
         print(str(e.root.memory))
         if not t.is_root:
             print(str(t.memory))

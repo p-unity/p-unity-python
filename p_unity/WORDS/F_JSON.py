@@ -30,7 +30,7 @@ class LIB: # { JavaScript Object Notation : words }
 
     """
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
     @staticmethod ### ARROW ###

@@ -92,7 +92,7 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
             return
 
         v = ["p-unity FORTH v42.01"]
-        p, f = e.root.p_count, e.root.f_count
+        p, f = e.root.test["p"], e.root.test["f"]
         if p > 0:
             v.append(f"(Sanity Tests; {p} Pass, {f} Fail)")
 

@@ -43,9 +43,35 @@ class LIB: # { The Object ABI : words }
 
     """
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
+
+    @staticmethod ### PYTHON ###
+    def word_PYTHON__R(e, t, c, s1):
+
+        from RestrictedPython import compile_restricted
+        from RestrictedPython import safe_globals
+
+        loc = {}
+        byte_code = compile_restricted(s1, '<inline>', 'exec')
+        exec(byte_code, safe_globals, loc)
+
+        for name in sorted(loc):
+            if name.startswith("word_"):
+                e.add_word(name[5:], loc[name])
+            if name.startswith("sigil_"):
+                e.add_word(name[6:], loc[name])
+
+
+    @staticmethod ### LAMBDA ###
+    def word_LAMBDA__R(e, t, c, s1, s2):
+        s2 = repr(s2)
+        parts = s1.split(":", 1)
+        parts[0] = parts[0].strip()
+        parts[0] = ", " + parts[0] if len(parts[0]) else parts[0]
+        s1 = ":".join(parts)
+        exec(f"e.add_word({s2}, lambda e, t, c{s1})")
 
     @staticmethod ### LEN ###
     def word_LEN__R_x_n(e, t, c, x):

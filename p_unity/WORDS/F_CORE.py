@@ -24,8 +24,9 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { CORE : words }
 
-    def __init__(self, e, **kwargs):
-        e.tests_1.append(__tests_1__)
+    def __init__(self, e, t, **kwargs):
+        #t.tests[1].append(__tests_1__)
+        pass
 
     @staticmethod ### ( ###
     def sigil_lparen(e, t, c, token, start=False):
@@ -80,36 +81,27 @@ class LIB: # { CORE : words }
         t.stack = block["STACK"]
 
         if need == have:
-            t.p_count += 1
+            t.test["p"] += 1
             return
 
         line = t.lines.get(t.line, "")
 
         if not len(need) == len(have):
-            t.f_count += 1
+            t.test["f"] += 1
             print(f"WRONG NUMBER OF RESULTS: {have} ~= {need} {line}")
             return
 
         equal = True
         for i in range(0, len(need)):
-            if isinstance(need[i], bool):
-                if need[i]:
-                    equal = True if have[i] else False
-                else:
-                    equal = True if not have[i] else False
-            elif isinstance(have[i], bool):
-                if have[i]:
-                    equal = True if need[i] else False
-                else:
-                    equal = True if not need[i] else False
+            if isinstance(have[i], bool) or isinstance(need[i], bool):
+                equal = (not have[i]) == (not need[i])
             else:
-                equal = need[i] == have[i]
-
+                equal = have[i] == need[i]
             if not equal:
                 break
 
         if not equal:
-            t.f_count += 1
+            t.test["f"] += 1
             print(f"INCORRECT RESULT: {have} ~= {need} {line}")
 
 
@@ -229,10 +221,9 @@ class LIB: # { CORE : words }
         return (x > 0,)
 
 
-
     @staticmethod ### ." ###
     def word_dot_quote(e, t, c):
-        c.stack.append({"m":"DOT_QUOTE", "PARTS":[]})
+        c.stack.append({"m":"DOT_QUOTE", 0:t.line, 1:[]})
         t.state = LIB.state_dot_quote
 
     @staticmethod
@@ -241,15 +232,33 @@ class LIB: # { CORE : words }
         token = token[:-1] if end else token
 
         block = c.stack[-1]
-        block["PARTS"].append(token)
+        block[1].append("\n" * (t.line - block[0]) + token)
+        block[0] = t.line
 
         if end:
-            print(" ".join(block["PARTS"]), end="")
             c.stack.pop()
+            print(" ".join(block[1]), end="")
             t.state = e.state_INTERPRET
-            return
 
-        t.state = LIB.state_dot_quote
+
+    @staticmethod ### S" ###
+    def word_S_quote(e, t, c):
+        c.stack.append({"m":"S_QUOTE", 0:t.line, 1:[]})
+        t.state = LIB.state_S_quote
+
+    @staticmethod
+    def state_S_quote(e, t, c, token):
+        end = token[-1] == '"'
+        token = token[:-1] if end else token
+
+        block = c.stack[-1]
+        block[1].append("\n" * (t.line - block[0]) + token)
+        block[0] = t.line
+
+        if end:
+            c.stack.pop()
+            t.stack.append(" ".join(block[1]))
+            t.state = e.state_INTERPRET
 
 
     @staticmethod ### : ###
@@ -276,7 +285,7 @@ class LIB: # { CORE : words }
 
     @staticmethod ### IMMEDIATE ###
     def word_IMMEDIATE__R(e, t, c):
-        t.word_IMMEDIATE[t.last_compile] = True
+        t.word_immediate[t.last_compile] = True
 
     @staticmethod ### LITERAL ###
     def word_LITERAL__IR(e, t, c):
@@ -284,8 +293,20 @@ class LIB: # { CORE : words }
         : TEN I[ 5 5 + ]I LITERAL ;
         T{ TEN -> 10 }T
         """
-        assert t.state == LIB.state_COMPILE
-        block = c.stack[-1]
+        call = c
+        block = None
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if call.stack[index].get("?", "") == ":":
+                    block = call.stack[index]
+                    call = None
+                    break
+
+            call = call.parent if call else None
+
+        if block == None:
+            e.raise_RuntimeError("literal: error (-0): Only Valid During Compile")
+
         block[1].append(t.stack.pop())
 
     @staticmethod ### STATE ###
@@ -294,14 +315,11 @@ class LIB: # { CORE : words }
 
     @staticmethod ### I[ ###
     def word_I_lbrack__IR(e, t, c):
-        c.stack.append({"?":"[[", "r":t.state})
         t.state = e.state_INTERPRET
 
     @staticmethod ### ]I ###
-    def word_rbrack_I__R(e, t, c):
-        struct = c.stack.pop()
-        assert struct["?"] == "[["
-        t.state = struct["r"]
+    def word_rbrack_I__IR(e, t, c):
+        t.state = LIB.state_COMPILE
 
     @staticmethod ### CREATE ###
     def word_CREATE__R(e, t, c):
@@ -314,8 +332,20 @@ class LIB: # { CORE : words }
         T{ BAR -> HERE }T
 
         """
-        t.last_create = c.tokens.pop(0)
-        t.words[t.last_create] = (t.here,)
+        name = c.tokens.pop(0).lower()
+        t.last_create = name
+
+        does = []
+        if t.last_call in t.word_does:
+            does = t.word_does[t.last_call]
+        elif t.last_call in e.root.word_does:
+            does = e.root.word_does[t.last_call]
+
+        if len(does):
+            comment = ["(", t.last_call, "does>", ")"]
+            t.words[name] = [(t.here,)] + comment + does
+        else:
+            t.words[name] = (t.here,)
 
 
     @staticmethod ### DOES> ###
@@ -340,22 +370,33 @@ class LIB: # { CORE : words }
             else:
                 t.words[block["="]] = block[1]
                 if 2 in block:
-                    t.word_DOES[block["="]] = block[2]
+                    t.word_does[block["="]] = block[2]
 
         t.state = e.state_INTERPRET
 
     @staticmethod
     def state_COMPILE(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
-        if token_u in t.word_IMMEDIATE or token_u in e.root.word_IMMEDIATE:
-            return e.run(e, t, c, token_u)
-
         block = c.stack[-1]
         if block[0] == 0:
             block[0] = 1
             block[1] = []
-            block["="] = token_u
-            t.last_compile = token_u
+            t.last_compile = token.lower()
+            block["="] = t.last_compile
+            return
+
+        if not isinstance(token, str):
+            if isinstance(token, tuple):
+                block[block[0]].extend(token)
+            else:
+                block[block[0]].append(token)
+            return
+
+        token_l = token.lower()
+
+        if token_l in t.word_immediate or token_l in e.root.word_immediate:
+            #t.state = e.state_INTERPRET
+            e.run(e, t, c, token, token_l)
+            #t.state = LIB.state_COMPILE
             return
 
         if token == "#" or token == "\\":
@@ -373,6 +414,14 @@ class LIB: # { CORE : words }
         else:
             block[block[0]].append(token)
 
+
+    @staticmethod ### CHAR ###
+    def word_CHAR__R_n(e, t, c):
+        t.state = LIB.state_CHAR
+
+    def state_CHAR(e, t, c, token):
+        t.stack.append(ord(token[0]))
+        t.state = e.state_INTERPRET
 
     @staticmethod ### CHAR+ ###
     def word_CHAR_plus__R_a2(e, t, c, a1):
@@ -441,7 +490,7 @@ class LIB: # { CORE : words }
     def state_VALUE(e, t, c, token):
         struct = c.stack.pop()
         assert struct["?"] == "VALUE"
-        t.words[token.upper()] = (struct["x"],)
+        t.words[token.lower()] = (struct["x"],)
         t.state = e.state_INTERPRET
 
 
@@ -461,7 +510,7 @@ class LIB: # { CORE : words }
             t.state = e.state_INTERPRET
             return
 
-        t.words[token.upper()] = (t.stack.pop(),)
+        t.words[token.lower()] = (t.stack.pop(),)
         t.state = LIB.state_LOCALS_pipe
 
 
@@ -483,7 +532,7 @@ class LIB: # { CORE : words }
     def state_TO(e, t, c, token):
         struct = c.stack.pop()
         assert struct["?"] == "TO"
-        t.words[token.upper()] = (struct["x"],)
+        t.words[token.lower()] = (struct["x"],)
         t.state = e.state_INTERPRET
 
 
@@ -502,7 +551,7 @@ class LIB: # { CORE : words }
 
     @staticmethod
     def state_CONSTANT(e, t, c, token):
-        t.words[token.upper()] = [c.stack.pop()]
+        t.words[token.lower()] = [c.stack.pop()]
         t.state = e.state_INTERPRET
 
 
@@ -517,7 +566,7 @@ class LIB: # { CORE : words }
 
     @staticmethod
     def state_VARIABLE(e, t, c, token):
-        t.words[token.upper()] = [t.here]
+        t.words[token.lower()] = [t.here]
         t.here +=1
         t.state = e.state_INTERPRET
 
@@ -597,8 +646,8 @@ class LIB: # { CORE : words }
 
 
     @staticmethod ### C, ###
-    def word_C_comma__R(e, t, c, x):
-        t.memory[t.here] = x
+    def word_C_comma__R(e, t, c, n):
+        t.memory[t.here] = n
         t.here += 1
 
 
@@ -620,6 +669,27 @@ class LIB: # { CORE : words }
         t.here += 1
 
 
+    @staticmethod ### ['] ###
+    def word_lbrack_tick_rbrack__IR(e, t, c):
+        if not t.state == LIB.state_COMPILE:
+            e.raise_SyntaxError("[']: error (-0): Only Allowed During Compile")
+        t.state = LIB.state_lbrack_tick_rbrack
+
+    @staticmethod
+    def state_lbrack_tick_rbrack(e, t, c, token):
+        token_l = token.lower() if isinstance(token, str) else str
+        if token_l in t.words:
+            xt = t.words[token_l]
+        elif token_l in e.root.words:
+            xt = e.root.words[token_l]
+        else:
+            e.raise_RuntimeError("{token_l}: error (-0): Word Not Found By [']")
+
+        block = c.stack[-1]
+        block[block[0]].append(xt)
+
+        t.state = e.state_INTERPRET
+
 
     @staticmethod ### ' ###
     def word_tick__R_x(e, t, c):
@@ -627,31 +697,67 @@ class LIB: # { CORE : words }
 
     @staticmethod
     def state_tick(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else str
+        token_l = token.lower() if isinstance(token, str) else str
 
-        if token_u in t.words:
-            xt = t.words[token_u]
+        if token_l in t.words:
+            xt = t.words[token_l]
+        elif token_l in e.root.words:
+            xt = e.root.words[token_l]
         else:
-            xt = e.root.words[token_u]
+            e.raise_RuntimeError("{token_l}: error (-0): Word Not Found By [']")
 
         t.stack.append(xt)
 
         t.state = e.state_INTERPRET
 
+
+    @staticmethod
+    def word_FIND(e, t, c, x):
+
+        if isinstance(x, int):
+            parts = []
+            for i in range(1, t.memory[x] + 1):
+                parts.append(chr(t.memory[x + i]))
+            ic(parts)
+            x = "".join(parts)
+
+
+        x_l = x.lower()
+
+        xt = None
+        if x_l in t.words:
+            xt = t.words[x_l]
+            im = t.word_immediate.get(x_l, False)
+
+        elif x_l in e.root.words:
+            xt = e.root.words[x_l]
+            im = e.root.word_immediate.get(x_l, False)
+
+        if xt:
+            t.stack.extend([xt, 1 if im else -1])
+            return
+
+        t.stack.extend([x, 0])
+
     @staticmethod ### EXECUTE ###
     def word_EXECUTE__R(e, t, c):
         e.execute_tokens(e, t, c, t.stack.pop())
 
+    @staticmethod ### EX... ###
+    def word_EX_dot_dot_dot__R(e, t, c):
+        LIB.word_EXECUTE__R(e, t, c)
 
 import copy
 
 __tests_1__ = """
 
-0 999999 !
-
 : TEN 10 ;
 
 T{ TEN -> 10 }T
+
+T{ TEN 1 + -> 11 }T
+
+T{ ' TEN execute -> 10 }T
 
 T{ : DOES1 DOES> @ 1 + ; -> }T
 T{ : DOES2 DOES> @ 2 + ; -> }T

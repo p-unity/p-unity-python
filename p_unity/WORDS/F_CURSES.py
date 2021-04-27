@@ -32,7 +32,7 @@ class LIB: # { CURSES Text Interface : words }
 
     """
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         self.stdscr = None
         if 'stdscr' in kwargs:
             self.stdscr = kwargs['stdscr']

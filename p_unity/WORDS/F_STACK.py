@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class LIB: # { DATA Stack Manipulation : words }
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
     @staticmethod ### >R ###

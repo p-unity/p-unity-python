@@ -26,9 +26,6 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
     def __init__(self, run=None, run_tests=2, **kwargs):
 
-        self.run_tests = run_tests # 0, 1=Sanity, 2=&Smoke
-        self.tests_1 = []; self.tests_2 = []; self.tests_3 = []
-
         self.root = TASK(self, root=True)
         self.call = CALL(self)
 
@@ -39,23 +36,20 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         def load(self, names):
             for name in names.split(' '):
                 exec(f"from .WORDS import F_{name}")
-                exec(f"self.{name} = F_{name}.LIB(self)")
-                exec(f"self.add_words(self.{name})")
+                exec(f"self.{name} = F_{name}.LIB(self, self.root)")
+                exec(f"self.import_lib(self.{name})")
 
         load(self, 'CORE STACK MATH CONTROL')
         load(self, 'INPUT OUTPUT REPL')
         load(self, 'OBJECT JSON')
         load(self, 'UNICODE CURSES')
 
-        if self.run_tests >= 1:
-            self.execute_tests(__tests_1__)
-            for test in self.tests_1:
-                self.execute_tests(test if test else "")
+        for level in [1, 2, 3]:
+            if run_tests < level:
+                break
 
-        if self.run_tests >= 2:
-            self.execute_tests(__tests_2__)
-            for test in self.tests_2:
-                self.execute_tests(test if test else "")
+            self.execute_tests(__tests__[level])
+            self.execute_tests(self.root.tests[level])
 
         if run:
            self.execute(run)
@@ -82,86 +76,103 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
     }
 
-    def Mark(self, **kwargs):
-        return EngineMark(self, **kwargs)
+    def add_word(self, name, code, where=None):
+        parts = name.lower().split('_')
+        name = []
+        meta = None
+        for part in parts:
+            if meta == None:
+                if part == '':
+                    meta = []
+                    continue
+            else:
+                meta.append(part)
+                continue
+            name.append(self.__word_map.get(part, part))
 
-    def add_word(self, name, code):
-        self.root.words[name] = code
+        name = "".join(name)
+        where = where if where else self.root
 
-    def add_words(self, source):
+        #if name in where:
+        #    raise ForthException(f"{name}: error(-4): Word Already Defined")
+
+        if name in where.word_immediate:
+            del where.word_immediate[name]
+
+        if not meta == None:
+            if 'i' in meta[0]:
+                where.word_immediate[name] = True
+
+        where.words[name] = code
+        argc = code.__code__.co_argcount
+        if argc > 3:
+            where.word_argc[name] = argc - 3
+
+        where.tests[1].append(code.__doc__)
+
+    def add_sigil(self, name, code, where=None):
+        parts = name.lower().split('_')
+
+        name = []
+        meta = None
+        for part in parts:
+            if meta == None:
+                if part == '':
+                    meta = []
+                    continue
+            else:
+                meta.append(part)
+                continue
+
+            name.append(self.__word_map.get(part, part))
+
+        name = "".join(name)
+        where = where if where else self.root
+
+        if name in where.word_immediate:
+            del where.sigil_flag_IMMEDIATE[name]
+
+        if not meta == None:
+            if 'i' in meta[0]:
+                where.sigil_flag_IMMEDIATE[name] = True
+
+        #if name in where:
+        #    raise ForthException(f"{name}: error(-4): Sigil Already Defined")
+
+        where.sigils[name] = code
+
+        where.tests[1].append(code.__doc__)
+
+
+    def import_lib(self, source, where=None):
         word_names = []
         sigil_names = []
         for fname in dir(source):
             parts = fname.split('_')
+
             if len(parts) > 1 and parts[0][:4] == 'word':
                 word = getattr(source, fname)
                 word_names.append((word.__code__.co_firstlineno, fname))
+
             if len(parts) > 1 and parts[0][:5] == 'sigil':
                 sigil = getattr(source, fname)
                 sigil_names.append((sigil.__code__.co_firstlineno, fname))
 
         sigil_names.sort()
         for order, fname in sigil_names:
-            parts = fname.split('_')[1:]
-
-            name = []
-            for part in parts:
-                if part == '': break
-                if part[0].isupper() or part[0].isdigit():
-                    name.append(part.upper())
-                else:
-                    name.append(self.__word_map[part])
-
-            name = "".join(name)
-
-            if name in self.root.sigils:
-                raise ForthException(f"{name}: error(-4): Sigil Already Defined")
-
-            sigil = getattr(source, fname)
-            self.root.sigils[name] = sigil
-
-            if self.run_tests and sigil.__doc__:
-                self.execute_tests(sigil.__doc__)
+            code = getattr(source, fname)
+            self.add_sigil(fname[6:], code)
 
         word_names.sort()
         for order, fname in word_names:
-            parts = fname.split('_')[1:]
+            code = getattr(source, fname)
+            self.add_word(fname[5:], code)
 
-            name = []
-            meta = None
-            for part in parts:
+        if not where:
+            where = self.root
 
-                if meta == None:
-                    if part == '':
-                        meta = []
-                        continue
-                else:
-                    meta.append(part)
-                    continue
+        where.tests[2].append(source.__doc__)
 
-                if part[0].isupper() or part[0].isdigit():
-                    name.append(part.upper())
-                else:
-                    name.append(self.__word_map[part])
-
-            name = "".join(name)
-
-            if name in self.root.words:
-                raise ForthException(f"{name}: error(-4): Word Already Defined")
-
-            if not meta == None:
-                if 'I' in meta[0]:
-                    self.root.word_IMMEDIATE[name] = True
-
-            word = getattr(source, fname)
-            self.root.words[name] = word
-            argc = word.__code__.co_argcount
-            if argc > 3:
-                self.root.word_argc[name] = argc - 3
-
-            self.tests_1.append(word.__doc__)
-
-        self.tests_2.append(source.__doc__)
 
     @staticmethod
     def to_number(e, t, c, token):
@@ -214,63 +225,66 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 t.stack.append(token)
             return
 
-        is_number, value = e.to_number(e, t, c, token)
+        token_l = token.lower()
+
+        is_number, value = e.to_number(e, t, c, token_l)
         if is_number:
            t.stack.append(value)
            return
 
-        Engine.run(e, t, c, token)
+        Engine.run(e, t, c, token, token_l)
 
     @staticmethod
-    def run(e, t, c, token):
-        token_u = token.upper()
+    def run(e, t, c, token, token_l):
 
-        if not (token_u in e.root.words or token_u in t.words):
+        if not (token_l in t.words or token_l in e.root.words):
 
             for sigil_len in [5, 4, 3, 2, 1]:
-                sigil = token[:sigil_len].upper()
+                sigil = token_l[:sigil_len]
+                if sigil in t.sigils:
+                    return t.sigils[sigil](e, t, c, token, start=True)
                 if sigil in e.root.sigils:
-                    e.root.sigils[sigil](e, t, c, token, start=True)
-                    return
+                    return e.root.sigils[sigil](e, t, c, token, start=True)
 
-            details = f"{token}: error(-13): word not found"
+            details = f"{token_l}: error(-13): word not found"
             raise ForthException(details)
 
         args = []
-        if token_u in t.words:
-            code = t.words[token_u]
-            argc = t.word_argc.get(token_u, 0)
+        if token_l in t.words:
+            code = t.words[token_l]
+            argc = t.word_argc.get(token_l, 0)
         else:
-            code = e.root.words[token_u]
-            argc = e.root.word_argc.get(token_u, 0)
+            code = e.root.words[token_l]
+            argc = e.root.word_argc.get(token_l, 0)
+
+        if isinstance(code, tuple):
+            t.stack.extend(code)
+            return
 
         if isinstance(code, list):
-            t.call_count += 1
+            t.last_call = token_l
             if c.depth == 0:
                 c.depth += 1
                 e.execute_tokens(e, t, c, code)
                 c.depth -= 1
             else:
                 e.execute_tokens(e, t, CALL(e, c), code)
-            return
-
-        if isinstance(code, tuple):
-            t.stack.extend(code)
-
-            if token_u in t.word_does:
-                does = t.word_does[token_u]
-                e.exeute_tokens(e, t, c, does)
 
             return
 
         if argc > len(t.stack):
-            details = f"{token}: error(-4): stack underflow"
+            details = f"{token}: error(-4): Needs {argc} arg(s)"
             raise ForthException(details)
 
         if argc > 0:
             t.stack, args = t.stack[:-argc], t.stack[-argc:]
 
-        t.stack.extend(code(e, t, c, *args) or tuple())
+        result = code(e, t, c, *args)
+        if not result == None:
+            if isinstance(result, tuple):
+                t.stack.extend(result)
+            else:
+                t.stack.append(result)
 
     @staticmethod
     def execute_tokens(e, t, c, tokens):
@@ -283,34 +297,41 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
 
     def execute_tests(self, tests):
-        task = TASK(self)
-        call = CALL(self, self.call)
-        for line in tests.split("\n"):
-            line = line.strip()
-            if line == "" or line[0] in ["#"]:
+        if not tests:
+            return
+        for test in tests:
+            if not test:
                 continue
+            task = TASK(self)
+            call = CALL(self, self.call)
+            for line in test.split("\n"):
+                line = line.strip()
+                if line == "" or line[0] in ["#"]:
+                    continue
 
-            f_count = task.f_count
-            try:
+                f_count = task.test["f"]
+                if 1: #try:
 
-                call.tokens = line.split()
-                while len(call.tokens):
-                    token = call.tokens.pop(0)
-                    if token in ["#"]:
-                        break
-                    task.state(self, task, call, token)
-                    if call.EXIT:
-                        break
+                    call.tokens = line.split()
+                    while len(call.tokens):
+                        token = call.tokens.pop(0)
+                        if token in ["#"]:
+                            break
+                        state = task.state
+                        state(self, task, call, token)
+                        if call.EXIT:
+                            break
 
-            except Exception as ex:
-                print(ex)
-                task.f_count += 1
-            if not f_count == task.f_count:
-                print(line)
+                #except Exception as ex:
+                #    print(ex)
+                #    task.test["f"] += 1
+
+                if not f_count == task.test["f"]:
+                    print("!!! ", line)
 
 
-        self.root.p_count += task.p_count
-        self.root.f_count += task.f_count
+            self.root.test["p"] += task.test["p"]
+            self.root.test["f"] += task.test["f"]
 
     def execute(self, lines):
         self.call.EXIT = False
@@ -343,15 +364,14 @@ class TASK:
         self.here = 1_000_000 if root else 1
 
         self.sigils = {}
+        self.sigil_flag_IMMEDIATE = {}
 
         self.words = {}
         self.word_argc = {}
         self.word_does = {}
-        self.word_DOES = {}
-        self.word_IMMEDIATE = {}
+        self.word_immediate = {}
 
-        self.call_count = 0
-
+        self.last_call = ""
         self.last_create = ""
         self.last_compile = ""
 
@@ -360,9 +380,8 @@ class TASK:
         self.line = 0
         self.lines = {}
 
-        self.f_count = 0
-        self.p_count = 0
-        self.x_count = 0
+        self.test = {"p":0, "f":0, "e":0}
+        self.tests = {1:[], 2:[], 3:[]}
 
         self.state = engine.state_INTERPRET
 
@@ -377,13 +396,6 @@ class CALL:
         self.stack = []
         self.EXIT = False
 
-class EngineMark:
-
-    def __init__(self, engine, **kwargs):
-        self.engine = engine
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
 class ForthException(Exception):
     pass
 
@@ -397,7 +409,9 @@ import functools
 
 from decimal import Decimal
 
-__tests_1__ = """
+__tests__ = {1:[], 2:[], 3:[]}
+
+__tests__[3].append("""
 
 T{ 0.1 0.2 + -> 0.3 }T
 
@@ -407,20 +421,20 @@ T{ 0.1 0.2 + -> 0.3 }T
 
 # T{ ("--") (.__len__) -> ("--") #2 }T
 
-: IDE
+( : IDE
 CURSES
 0 0 20 20 WINDOW BORDER REFRESH
 GETKEY
-;
+; )
 
 : COUNTDOWN    ( n --)
                BEGIN  CR   DUP  .  1 -   DUP   0  =   UNTIL  DROP  ;
 
 # 5 COUNTDOWN
 
-"""
+""")
 
-__tests_2__ = """
+__tests__[3].append("""
 
 0 CONSTANT 0S
 0 INVERT CONSTANT 1S
@@ -434,5 +448,5 @@ T{ <FALSE> -> 0 }T
 
 T{ ' FOO -> [ 10 , ] }T
 
-"""
+""")
 

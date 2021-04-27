@@ -30,7 +30,7 @@ class LIB: # { Mathematical : words }
 
     """
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
     @staticmethod ### NEGATE ###

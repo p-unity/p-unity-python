@@ -67,11 +67,11 @@ class TestFORTH:
         T{ 'Hello 'World DROP -> ("Hello") }T
         """
         e = FORTH.Engine(self.test_1000.__doc__, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     def test_BASIC_ASSUMPTIONS(self):
         e = FORTH.Engine(self.BASIC_ASSUMPTIONS, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     BASIC_ASSUMPTIONS = r"""
 
@@ -86,7 +86,7 @@ T{ -1 BITSSET? -> 0 0 }T
 
     def test_BOOLEANS_INVERT(self):
         e = FORTH.Engine(self.BOOLEANS_INVERT, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     BOOLEANS_INVERT = r"""
 
@@ -124,7 +124,7 @@ T{ 1S 1S XOR -> 0S }T
 
     def test_LSHIFT_RSHIFT(self):
         e = FORTH.Engine(self.LSHIFT_RSHIFT, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     LSHIFT_RSHIFT = r"""
 
@@ -172,7 +172,7 @@ T{ MSB 1 RSHIFT 2* -> MSB }T
 
     def test_COMPARISONS(self):
         e = FORTH.Engine(self.COMPARISONS, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     COMPARISONS = r"""
 
@@ -256,7 +256,7 @@ T{ 1 -1 MAX -> 1 }T
 
     def test_STACK_OPS(self):
         e = FORTH.Engine(self.STACK_OPS, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     STACK_OPS = r"""
 
@@ -282,7 +282,7 @@ T{ 1 2 SWAP -> 2 1 }T
 
     def test_RETURN_STACK(self):
         e = FORTH.Engine(self.RETURN_STACK, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     RETURN_STACK = r"""
 
@@ -301,7 +301,7 @@ T{ 1S GR1 -> 1S }T   ( RETURN STACK HOLDS CELLS )
 
     def test_ADD_SUBTRACT(self):
         e = FORTH.Engine(self.ADD_SUBTRACT, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     ADD_SUBTRACT = r"""
 
@@ -352,7 +352,7 @@ T{ -1 ABS -> 1 }T
 
     def test_MULTIPLY(self):
         e = FORTH.Engine(self.MULTIPLY, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     MULTIPLY = r"""
 
@@ -414,7 +414,7 @@ T{ -3 -3 * -> 9 }T
 
     def test_HERE(self):
         e = FORTH.Engine(self.HERE, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     HERE = r"""
 
@@ -459,12 +459,22 @@ T{ 1ST @ 2ND @ -> 5 6 }T
 
     def test_COMPILE(self):
         e = FORTH.Engine(self.COMPILE, **self.options)
-        assert e.root.f_count == 0
+        assert e.root.test["f"] == 0
 
     COMPILE = r"""
 
 T{ : GT1 123 ; -> }T
 T{ ' GT1 EXECUTE -> 123 }T
+T{ : GT2 ['] GT1 ; IMMEDIATE -> }T
+T{ GT2 EXECUTE -> 123 }T
+HERE 3 C, CHAR G C, CHAR T C, CHAR 1 C, CONSTANT GT1STRING
+HERE 3 C, CHAR G C, CHAR T C, CHAR 2 C, CONSTANT GT2STRING
+T{ GT1STRING FIND -> ' GT1 -1 }T
+T{ GT2STRING FIND -> ' GT2 1 }T
+( HOW TO SEARCH FOR NON-EXISTENT WORD? )
+( T{ : GT3 GT2 LITERAL ; -> }T )
+( T{ GT3 -> ' GT1 }T )
+( T{ GT1STRING COUNT -> GT1STRING CHAR+ 3 }T )
 
     """
 

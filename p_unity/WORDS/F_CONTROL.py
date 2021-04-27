@@ -49,7 +49,7 @@ class LIB: # { Control Flow : words }
 
     """
 
-    def __init__(self, e, **kwargs):
+    def __init__(self, e, t, **kwargs):
         pass
 
     @staticmethod ### EXIT ###
@@ -130,7 +130,7 @@ class LIB: # { Control Flow : words }
 
     @staticmethod ### DO ###
     def word_DO__R(e, t, c):
-        struct = {"?":"DO", 1:[], "DO":0, "r":t.state}
+        struct = {"?":"DO", 0:0, 1:[], "r":t.state}
         c.stack.append(struct)
 
         tos = t.stack.pop()
@@ -147,15 +147,15 @@ class LIB: # { Control Flow : words }
         struct = c.stack[-1]
         assert struct["?"] == "DO"
 
-        token_u = token.upper() if isinstance(token, str) else token
+        token_l = token.lower() if isinstance(token, str) else token
 
-        if token_u == "LOOP" or token_u == "+LOOP":
-            if struct["DO"] == 0:
-                return LIB.impl_DO(e, t, c, token, struct)
-            struct["DO"] -= 1
+        if token_l == "loop" or token_l == "+loop":
+            if struct[0] == 0:
+                return LIB.impl_DO(e, t, c, token_l, struct)
+            struct[0] -= 1
 
-        if token_u == "DO":
-            struct["DO"] += 1
+        if token_l == "do":
+            struct[0] += 1
 
         is_number, value = e.to_number(e, t, c, token)
         if is_number:
@@ -164,12 +164,12 @@ class LIB: # { Control Flow : words }
             struct[1].append(token)
 
     @staticmethod
-    def impl_DO(e, t, c, token, struct):
+    def impl_DO(e, t, c, token_l, struct):
 
         t.state = e.state_INTERPRET
 
         if "iter" in struct:
-            if token == "+LOOP":
+            if token_l == "+loop":
                 e.raise_RuntimeError("LOOP+: error(-0): Only Valid on Integer Loops")
 
             iter = struct["iter"]
@@ -188,9 +188,9 @@ class LIB: # { Control Flow : words }
 
             while struct["i2"] < struct["i1"]:
                 e.execute_tokens(e, t, c, struct[1])
-                if token == "LOOP":
+                if token_l == "loop":
                     struct["i2"] += 1
-                elif token == "+LOOP":
+                elif token_l == "+loop":
                     struct["i2"] += t.stack.pop()
 
         c.stack.pop()
@@ -220,11 +220,11 @@ class LIB: # { Control Flow : words }
         struct = c.stack[-1]
         assert struct["?"] == "BEGIN"
 
-        token_u = token.upper() if isinstance(token, str) else token
-        if token_u == "UNTIL" or token_u == "REPEAT":
+        token_l = token.lower() if isinstance(token, str) else token
+        if token_l == "until" or token_l == "repeat":
             return LIB.impl_BEGIN(e, t, c, struct)
 
-        if token_u == "WHILE":
+        if token_l == "while":
             struct["m"] = 2
             return
 
@@ -243,44 +243,6 @@ class LIB: # { Control Flow : words }
         e.raise_SyntaxError("WHILE: error(-0): No BEGIN")
 
 
-
-
-
-
-
-    @staticmethod ### <.IF ###
-    def word_langle_dot_IF__R(e, t, c, b):
-        c = {"m":"<.IF", "b":b, "THEN.>":[], "ELSE.>":[], "r":f.state}
-        c.fixme.append(c)
-        t.state = f.langle_dot_IF
-
-    @staticmethod ### THEN.> ###
-    def word_THEN_dot_rangle__R(e, t, c):
-        f.raise_SyntaxError("THEN.>: error(-0): Free Standing THEN.> Not Allowed")
-
-    @staticmethod ### ELSE.> ###
-    def word_ELSE_dot_rangle__R(e, t, c):
-        f.raise_SyntaxError("ELSE.>: error(-0): Free Standing ELSE.> Not Allowed")
-
-    @staticmethod ### IF. ###
-    def word_IF_dot__R(e, t, c, free_standing=True):
-
-        ""
-
-        """
-        T{ 0      <.IF THEN.> 'YES ELSE.> 'NO IF. -> 'NO }T
-        T{ <true> <.IF THEN.> 'YES ELSE.> 'NO IF. -> 'YES }T
-        """
-
-        if free_standing:
-            f.raise_SyntaxError("ELSE.>: error(-0): Free Standing IF. Not Allowed")
-
-        c = c.fixme.pop()
-        t.state = c["r"]
-        if c["b"]:
-           f.execute(c["THEN.>"])
-        else:
-           f.execute(c["ELSE.>"])
 
 
 
@@ -305,13 +267,13 @@ class LIB: # { Control Flow : words }
 
     @staticmethod
     def state_IF_TRUE(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
+        token_l = token.lower() if isinstance(token, str) else token
 
-        if token_u == "ELSE":
+        if token_l == "else":
             t.state = e.CONTROL.state_IF_FALSE
             return
 
-        if token_u == "END_IF" or token_u == "THEN":
+        if token_l == "end_if" or token_l == "then":
             e.CONTROL.impl_IF(e, t, c)
             return
 
@@ -331,13 +293,13 @@ class LIB: # { Control Flow : words }
 
     @staticmethod
     def state_IF_FALSE(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
+        token_l = token.lower() if isinstance(token, str) else token
 
-        if token_u == "ELSE":
+        if token_l == "else":
             t.state = e.CONTROL.IF_TRUE
             return
 
-        if token_u == "END_IF" or token_u == "THEN":
+        if token_l == "end_if" or token_l == "then":
             e.CONTROL.impl_IF(e, t, c)
             return
 
@@ -359,88 +321,4 @@ class LIB: # { Control Flow : words }
     @staticmethod ### END_IF ###
     def word_END_IF__R(e, t, c):
         e.CONTROL.impl_IF(e, t, c)
-
-
-
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
-
-
-r"""
-
-
-    def langle_dot_IF(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
-
-        if token_u == "THEN.>":
-            t.state = f.THEN_dot_rangle
-            return
-
-        if token_u == "ELSE.>":
-            t.state = f.ELSE_dot_rangle
-            return
-
-        if token_u == "IF.":
-            f.CONTROL.word_IF_dot__R(e, t, c, free_standing=False)
-            return
-
-        raise ForthException("<.IF: error(-0): Words not allowed between <.IF and THEN.>")
-
-    def THEN_dot_rangle(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
-
-        if token_u == "THEN.>":
-            raise ForthSyntaxException("THEN.>: error(-0): Nested THEN.> Not Allowed")
-
-        if token_u == "ELSE.>":
-            t.state = f.ELSE_dot_rangle
-            return
-
-        if token_u == "IF.":
-            f.CONTROL.word_IF_dot__R(e, t, c, free_standing=False)
-            return
-
-        c.fixme[-1]["THEN.>"].append(token)
-        t.state = f.THEN_dot_rangle
-
-    def ELSE_dot_rangle(e, t, c, token):
-        token_u = token.upper() if isinstance(token, str) else token
-
-        if token_u == "THEN.>":
-            raise ForthSyntaxException("THEN.>: error(-0): THEN.> Folling ELSE.> Not Allowed")
-
-        if token_u == "ELSE.>":
-            raise ForthSyntaxException("ELSE.>: error(-0): Nested ELSE.> Not Allowed")
-
-        if token_u == "IF.":
-            f.CONTROL.word_IF_dot__R(e, t, c, free_standing=False)
-            return
-
-        c.fixme[-1]["ELSE.>"].append(token)
-        t.state = f.ELSE_dot_rangle
-
-
-
-"""
-
-
-
-
-
-
-
-
-
-
-
 
