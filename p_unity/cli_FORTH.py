@@ -67,8 +67,6 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
     def run_stdio(self, run=None):
 
-        import rich
-
         #keyboard.add_hotkey('ctrl+shift+a', print, args=('triggered', 'hotkey'))
 
         e = self.e
