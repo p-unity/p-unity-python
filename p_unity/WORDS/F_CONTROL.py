@@ -170,7 +170,7 @@ class LIB: # { Control Flow : words }
 
         if "iter" in struct:
             if token_l == "+loop":
-                e.raise_RuntimeError("LOOP+: error(-0): Only Valid on Integer Loops")
+                e.raise_RuntimeError("+loop: error(-0): Only Valid on Integer Loops")
 
             iter = struct["iter"]
             if isinstance(iter, list):
@@ -186,34 +186,31 @@ class LIB: # { Control Flow : words }
 
         else:
 
-            while struct["i2"] < struct["i1"]:
-                e.execute_tokens(e, t, c, struct[1])
-                if token_l == "loop":
+            struct[0] = True
+
+            if token_l == "loop":
+                while struct[0] and struct["i2"] < struct["i1"]:
+                    e.execute_tokens(e, t, c, struct[1])
                     struct["i2"] += 1
-                elif token_l == "+loop":
+
+            elif token_l == "+loop":
+                while struct[0]:
+                    e.execute_tokens(e, t, c, struct[1])
                     struct["i2"] += t.stack.pop()
+                    if struct["i2"] < struct["i1"]:
+                        break
 
         c.stack.pop()
         t.state = struct["r"]
 
+    @staticmethod ### LEAVE ###
+    def word_LEAVE(e, t, c):
+        c.stack[-1][0] = False
 
     @staticmethod ### BEGIN ###
     def word_BEGIN(e, t, c):
-        c.stack.append({"?":"BEGIN", "m":1, 1:[], 2:[], "r":t.state})
-        t.state = e.CONTROL.state_BEGIN
-
-    @staticmethod
-    def impl_BEGIN(e, t, c, struct):
-
-        if struct["m"] == 1:
-            while True:
-                t.state = e.state_INTERPRET
-                e.execute_tokens(e, t, c, struct[1])
-                b = t.stack.pop()
-                if b:
-                    break
-
-        t.state = struct["r"]
+        c.stack.append({"?":"BEGIN", 0:1, 1:[], "r":t.state})
+        t.state = LIB.state_BEGIN
 
     @staticmethod
     def state_BEGIN(e, t, c, token):
@@ -222,13 +219,40 @@ class LIB: # { Control Flow : words }
 
         token_l = token.lower() if isinstance(token, str) else token
         if token_l == "until" or token_l == "repeat":
-            return LIB.impl_BEGIN(e, t, c, struct)
+            return LIB.impl_BEGIN(e, t, c)
 
         if token_l == "while":
-            struct["m"] = 2
+            struct[0] = 2
+            struct[2] = []
             return
 
-        struct[struct["m"]].append(token)
+        struct[struct[0]].append(token)
+
+    @staticmethod
+    def impl_BEGIN(e, t, c):
+        struct = c.stack.pop()
+
+        t.state = e.state_INTERPRET
+
+        if struct[0] == 1:
+            while True:
+                print(t.stack, struct[1])
+                e.execute_tokens(e, t, c, struct[1])
+                b = t.stack.pop()
+                if b:
+                    break
+
+        if struct[0] == 2:
+            while True:
+                print(t.stack, struct[1], struct[2])
+                e.execute_tokens(e, t, c, struct[1])
+                b = t.stack.pop()
+                if not b:
+                    break
+                e.execute_tokens(e, t, c, struct[2])
+
+        t.state = struct["r"]
+
 
     @staticmethod ### REPEAT ###
     def word_REPEAT__R(e, t, c):
@@ -261,64 +285,38 @@ class LIB: # { Control Flow : words }
 
     @staticmethod ### IF ###
     def word_IF__R(e, t, c, b):
-        c.stack.append({"m":"IF", "b":b, 0:[], 1:[], "r":t.state})
-        t.state = e.CONTROL.state_IF_TRUE
-
+        c.stack.append({"?":"IF", "b":b, 0:[], 1:[], "r":t.state})
+        t.state = LIB.state_IF_TRUE
 
     @staticmethod
     def state_IF_TRUE(e, t, c, token):
         token_l = token.lower() if isinstance(token, str) else token
 
         if token_l == "else":
-            t.state = e.CONTROL.state_IF_FALSE
+            t.state = LIB.state_IF_FALSE
             return
 
         if token_l == "end_if" or token_l == "then":
-            e.CONTROL.impl_IF(e, t, c)
+            LIB.impl_IF(e, t, c)
             return
 
-        assert c.stack[-1]["m"] == "IF"
-
-        is_number, value = e.to_number(e, t, c, token)
-        if is_number:
-            c.stack[-1][1].append((value,))
-        else:
-            c.stack[-1][1].append(token)
-
-        t.state = e.CONTROL.state_IF_TRUE
+        c.stack[-1][1].append(token)
 
     @staticmethod ### ELSE ###
     def word_ELSE__R(e, t, c, token):
-        t.state = e.CONTROL.state_IF_FLASE
+        t.state = LIB.state_IF_FALSE
 
     @staticmethod
     def state_IF_FALSE(e, t, c, token):
         token_l = token.lower() if isinstance(token, str) else token
 
         if token_l == "else":
-            t.state = e.CONTROL.IF_TRUE
+            t.state = LIB.IF_TRUE
             return
 
         if token_l == "end_if" or token_l == "then":
-            e.CONTROL.impl_IF(e, t, c)
+            LIB.impl_IF(e, t, c)
             return
 
-        assert c.stack[-1]["m"] == "IF"
-
-        is_number, value = e.to_number(e, t, c, token)
-        if is_number:
-            c.stack[-1][0].append((value,))
-        else:
-            c.stack[-1][0].append(token)
-
-        t.state = e.CONTROL.state_IF_TRUE
-
-
-    @staticmethod ### THEN ###
-    def word_THEN__R(e, t, c):
-        e.CONTROL.impl_IF(e, t, c)
-
-    @staticmethod ### END_IF ###
-    def word_END_IF__R(e, t, c):
-        e.CONTROL.impl_IF(e, t, c)
+        c.stack[-1][0].append(token)
 

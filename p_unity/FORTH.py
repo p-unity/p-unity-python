@@ -24,7 +24,7 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
-    def __init__(self, run=None, run_tests=2, **kwargs):
+    def __init__(self, run=None, run_tests=0, **kwargs):
 
         self.root = TASK(self, root=True)
         self.call = CALL(self)
@@ -60,7 +60,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
     def raise_RuntimeError(self, details):
         raise ForthRuntimeException(details)
 
-    __word_map = {
+    symbol_map = {
 
         "bang": "!", "at": "@", "hash": "#", "dollar": "$",
         "tick": "'", "quote": '"', "btick": "`", "equal": "=",
@@ -88,7 +88,7 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
             else:
                 meta.append(part)
                 continue
-            name.append(self.__word_map.get(part, part))
+            name.append(self.symbol_map.get(part, part))
 
         name = "".join(name)
         where = where if where else self.root
@@ -124,17 +124,17 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
                 meta.append(part)
                 continue
 
-            name.append(self.__word_map.get(part, part))
+            name.append(self.symbol_map.get(part, part))
 
         name = "".join(name)
         where = where if where else self.root
 
         if name in where.word_immediate:
-            del where.sigil_flag_IMMEDIATE[name]
+            del where.sigil_immediate[name]
 
         if not meta == None:
             if 'i' in meta[0]:
-                where.sigil_flag_IMMEDIATE[name] = True
+                where.sigil_immediate[name] = True
 
         #if name in where:
         #    raise ForthException(f"{name}: error(-4): Sigil Already Defined")
@@ -219,13 +219,21 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
     def state_INTERPRET(e, t, c, token):
 
         if not isinstance(token, str):
-            if isinstance(token, tuple):
-                t.stack.extend(token)
-            else:
+            if not isinstance(token, tuple):
                 t.stack.append(token)
+                return
+
+            if len(token) == 1:
+                t.stack.extend(token)
+            elif len(token) == 2:
+                Engine.run(e, t, c, token, token_l=None)
+            else:
+                print(token)
+                e.raise_RuntimeError("!: error(-1): Unknown XT")
+
             return
 
-        token_l = token.lower()
+        token_l = token.lower() if isinstance(token, str) else token
 
         is_number, value = e.to_number(e, t, c, token_l)
         if is_number:
@@ -235,31 +243,38 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
         Engine.run(e, t, c, token, token_l)
 
     @staticmethod
-    def run(e, t, c, token, token_l):
+    def run(e, t, c, token, token_l=None):
 
-        if not (token_l in t.words or token_l in e.root.words):
+        if isinstance(token, tuple):
 
-            for sigil_len in [5, 4, 3, 2, 1]:
-                sigil = token_l[:sigil_len]
-                if sigil in t.sigils:
-                    return t.sigils[sigil](e, t, c, token, start=True)
-                if sigil in e.root.sigils:
-                    return e.root.sigils[sigil](e, t, c, token, start=True)
+            if len(token) == 1:
+                t.stack.extend(token)
+                return
 
-            details = f"{token_l}: error(-13): word not found"
-            raise ForthException(details)
+            code, argc = token
 
-        args = []
-        if token_l in t.words:
-            code = t.words[token_l]
-            argc = t.word_argc.get(token_l, 0)
         else:
-            code = e.root.words[token_l]
-            argc = e.root.word_argc.get(token_l, 0)
 
-        if isinstance(code, tuple):
-            t.stack.extend(code)
-            return
+            if not (token_l in t.words or token_l in e.root.words):
+
+                for sigil_len in [5, 4, 3, 2, 1]:
+                    sigil = token_l[:sigil_len]
+                    if sigil in t.sigils:
+                        t.sigils[sigil](e, t, c, token, start=True)
+                        return
+                    if sigil in e.root.sigils:
+                        e.root.sigils[sigil](e, t, c, token, start=True)
+                        return
+
+                details = f"{token_l}: error(-13): word not found"
+                raise ForthException(details)
+
+            if token_l in t.words:
+                code = t.words[token_l]
+                argc = t.word_argc.get(token_l, 0)
+            else:
+                code = e.root.words[token_l]
+                argc = e.root.word_argc.get(token_l, 0)
 
         if isinstance(code, list):
             t.last_call = token_l
@@ -272,10 +287,20 @@ class Engine: # { The Reference Implementation of FORTH^3 : p-unity }
 
             return
 
+        if isinstance(code, tuple):
+            if len(token) == 1:
+                t.stack.extend(code)
+                return
+            elif len(code) == 2:
+                code, argc = code
+            else:
+                e.raise_RuntimeError("!: error(-1): Unknown XT")
+
         if argc > len(t.stack):
             details = f"{token}: error(-4): Needs {argc} arg(s)"
             raise ForthException(details)
 
+        args = []
         if argc > 0:
             t.stack, args = t.stack[:-argc], t.stack[-argc:]
 
@@ -364,7 +389,7 @@ class TASK:
         self.here = 1_000_000 if root else 1
 
         self.sigils = {}
-        self.sigil_flag_IMMEDIATE = {}
+        self.sigil_immediate = {}
 
         self.words = {}
         self.word_argc = {}
@@ -395,6 +420,20 @@ class CALL:
         self.depth = 0
         self.stack = []
         self.EXIT = False
+
+    def find_struct(self, name):
+        call = self
+        block = None
+        while call:
+            for index in range(-1, (len(call.stack) * -1) - 1, -1):
+                if call.stack[index].get("?", "") == name:
+                    block = call.stack[index]
+                    call = None
+                    break
+
+            call = call.parent if call else None
+
+        return block
 
 class ForthException(Exception):
     pass
@@ -449,4 +488,7 @@ T{ <FALSE> -> 0 }T
 T{ ' FOO -> [ 10 , ] }T
 
 """)
+
+
+
 

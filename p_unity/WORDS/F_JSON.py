@@ -41,7 +41,7 @@ class LIB: # { JavaScript Object Notation : words }
     @staticmethod ### ULID ###
     def word_ULID__R_x(e, t, c):
         import ulid
-        return (ulid.new(),)
+        return (ulid.ULID(),)
 
     @staticmethod ### ([ ###
     def sigil_lparen_lbrack(e, t, c, token, *args, **kwargs):

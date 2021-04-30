@@ -94,6 +94,10 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         if p > 0:
             v.append(f"(Sanity Tests; {p} Pass, {f} Fail)")
 
+        if __run__:
+            print(__run__.strip())
+            e.execute(__run__)
+
         print("")
         print(" ".join(v))
         print("")
@@ -134,4 +138,12 @@ def ide_stdio(run=None):
 import sys, arrow
 
 from . import FORTH
+
+__run__ = """
+
+T{ : GD2 DO I -1 +LOOP ; -> }T
+T{ 1 4 GD2 -> 4 3 2 1 }T
+T{ -1 2 GD2 -> 2 1 0 -1 }T
+
+"""
 

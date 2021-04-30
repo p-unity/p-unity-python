@@ -30,8 +30,8 @@ class LIB: # { CORE : words }
 
     @staticmethod ### ( ###
     def sigil_lparen(e, t, c, token, start=False):
-        end = token[-1] == ")"
-        if end:
+
+        if isinstance(token, str) and len(token) and token[-1] == ")":
             t.state = e.state_INTERPRET
             return
 
@@ -104,6 +104,22 @@ class LIB: # { CORE : words }
             t.test["f"] += 1
             print(f"INCORRECT RESULT: {have} ~= {need} {line}")
 
+    @staticmethod ### TESTING ###
+    def word_TESTING__R(e, t, c):
+        c.stack.append({"?":"TESTING", "LINE":t.line, "r":t.state})
+        t.state = LIB.state_TESTING
+
+    @staticmethod
+    def state_TESTING(e, t, c, token):
+        struct = c.stack[-1]
+        if t.line == struct["LINE"]:
+            print(token, end=" ")
+            return
+
+        c.stack.pop()
+        t.state = struct["r"]
+        t.state(e, t, c, token)
+
 
     @staticmethod ### <TRUE> ###
     def word_langle_TRUE_rangle__R_b(e, t, c):
@@ -135,23 +151,6 @@ class LIB: # { CORE : words }
     @staticmethod ### HEX ###
     def word_HEX__R(e, t, c):
         pass
-
-
-    @staticmethod ### TESTING ###
-    def word_TESTING__R(e, t, c):
-        c.stack.append({"?":"TESTING", "LINE":t.line, "r":t.state})
-        t.state = LIB.state_TESTING
-
-    @staticmethod
-    def state_TESTING(e, t, c, token):
-        struct = c.stack[-1]
-        if t.line == struct["LINE"]:
-            print(token, end=" ")
-            return
-
-        c.stack.pop()
-        t.state = struct["r"]
-        t.state(e, t, c, token)
 
 
     @staticmethod ### = ###
@@ -261,15 +260,16 @@ class LIB: # { CORE : words }
             t.state = e.state_INTERPRET
 
 
+
+
+
+
     @staticmethod ### : ###
     def word_colon(e, t, c):
-        call = c
-        while call:
-            for index in range(-1, (len(call.stack) * -1) - 1, -1):
-                if " : " in call.stack[index]:
-                    call.stack[index][" : "](e, t, call)
-                    return
-            call = call.parent
+        struct = c.find_struct(" : ")
+        if struct:
+            struct[" : "](e, t, c)
+            return
 
         c.stack.append({"?":":", 0:0})
         t.state = LIB.state_COMPILE
@@ -293,21 +293,11 @@ class LIB: # { CORE : words }
         : TEN I[ 5 5 + ]I LITERAL ;
         T{ TEN -> 10 }T
         """
-        call = c
-        block = None
-        while call:
-            for index in range(-1, (len(call.stack) * -1) - 1, -1):
-                if call.stack[index].get("?", "") == ":":
-                    block = call.stack[index]
-                    call = None
-                    break
-
-            call = call.parent if call else None
-
-        if block == None:
+        struct = c.find_struct(":")
+        if not struct:
             e.raise_RuntimeError("literal: error (-0): Only Valid During Compile")
 
-        block[1].append(t.stack.pop())
+        struct[struct[0]].append(t.stack.pop())
 
     @staticmethod ### STATE ###
     def word_STATE__R_b(e, t, c):
@@ -318,7 +308,7 @@ class LIB: # { CORE : words }
         t.state = e.state_INTERPRET
 
     @staticmethod ### ]I ###
-    def word_rbrack_I__IR(e, t, c):
+    def word_rbrack_I__R(e, t, c):
         t.state = LIB.state_COMPILE
 
     @staticmethod ### CREATE ###
@@ -342,18 +332,19 @@ class LIB: # { CORE : words }
             does = e.root.word_does[t.last_call]
 
         if len(does):
-            comment = ["(", t.last_call, "does>", ")"]
-            t.words[name] = [(t.here,)] + comment + does
+            #comment = ["(", t.last_call, "does>", ")"]
+            #t.words[name] = [(t.here,)] + comment + does
+            t.words[name] = [(t.here,)] + does
         else:
-            t.words[name] = (t.here,)
+            t.words[name] = [(t.here,)]
 
 
     @staticmethod ### DOES> ###
     def word_DOES_rangle__IR(e, t, c):
         struct = c.stack[-1]
-        if not t.state == LIB.state_COMPILE:
-            e.raise_SyntaxError("DOES>: error (-0): Not Valid Outside :")
-        if not struct[0] == 1:
+        #if not t.state == LIB.state_COMPILE:
+        #    e.raise_SyntaxError("DOES>: error (-0): Not Valid Outside :")
+        if struct[0] == 2:
             e.raise_SyntaxError("DOES>: error (-0): Only 1 DOES> Allowed")
         if struct["="] == "":
             e.raise_SyntaxError("DOES>: error (-0): Not Valid in :NONAME")
@@ -375,6 +366,10 @@ class LIB: # { CORE : words }
         t.state = e.state_INTERPRET
 
     @staticmethod
+    def state_COMPILE_INTERPRET(e, t, c, token):
+        return e.state_INTERPRET(e, t, c, token)
+
+    @staticmethod
     def state_COMPILE(e, t, c, token):
         block = c.stack[-1]
         if block[0] == 0:
@@ -394,9 +389,10 @@ class LIB: # { CORE : words }
         token_l = token.lower()
 
         if token_l in t.word_immediate or token_l in e.root.word_immediate:
-            #t.state = e.state_INTERPRET
+            t.state = LIB.state_COMPILE_INTERPRET
             e.run(e, t, c, token, token_l)
-            #t.state = LIB.state_COMPILE
+            if t.state == LIB.state_COMPILE_INTERPRET:
+                t.state = LIB.state_COMPILE
             return
 
         if token == "#" or token == "\\":
@@ -408,12 +404,12 @@ class LIB: # { CORE : words }
                 return
             del block["#"]
 
-        is_number, value = e.to_number(e, t, c, token)
-        if is_number:
-            block[block[0]].append(value)
-        else:
-            block[block[0]].append(token)
+        block[block[0]].append(token)
 
+
+    @staticmethod ### COUNT ###
+    def word_COUNT__R_n(e, t, c, a):
+        return (a + 1, t.memory.get(a, 0))
 
     @staticmethod ### CHAR ###
     def word_CHAR__R_n(e, t, c):
@@ -654,11 +650,11 @@ class LIB: # { CORE : words }
     @staticmethod ### , ###
     def word_comma__R(e, t, c, x):
 
-        for index in range(-1, (len(c.stack) * -1) - 1, -1):
-            if " , " in c.stack[index]:
-                c.stack[index][" x "] = x
-                c.stack[index][" , "](e, t, c)
-                return
+        struct = c.find_struct(" , ")
+        if struct:
+            struct[" x "] = x
+            struct[" , "](e, t, c)
+            return
 
         t.memory[t.here] = x
         t.here += 1
@@ -671,8 +667,6 @@ class LIB: # { CORE : words }
 
     @staticmethod ### ['] ###
     def word_lbrack_tick_rbrack__IR(e, t, c):
-        if not t.state == LIB.state_COMPILE:
-            e.raise_SyntaxError("[']: error (-0): Only Allowed During Compile")
         t.state = LIB.state_lbrack_tick_rbrack
 
     @staticmethod
@@ -691,6 +685,33 @@ class LIB: # { CORE : words }
         t.state = e.state_INTERPRET
 
 
+    @staticmethod ### POSTPONE ###
+    def word_POSTPONE__IR(e, t, c):
+        t.state = LIB.state_POSTPONE
+
+    @staticmethod
+    def state_POSTPONE(e, t, c, token):
+        token_l = token.lower() if isinstance(token, str) else str
+
+        if token_l in t.words:
+            code = t.words[token_l]
+            argc = t.word_argc.get(token_l, 0)
+        elif token_l in e.root.words:
+            code = e.root.words[token_l]
+            argc = e.root.word_argc.get(token_l, 0)
+        else:
+            e.raise_RuntimeError("{token_l}: error (-0): Word Not Found By [']")
+
+        block = c.stack[-1]
+        block[block[0]].append((code,argc))
+
+        t.state = LIB.state_COMPILE
+
+
+    @staticmethod ### >BODY ###
+    def word_rangle_BODY__R_x(e, t, c, x):
+        t.stack.append(x[0][0])
+
     @staticmethod ### ' ###
     def word_tick__R_x(e, t, c):
         t.state = LIB.state_tick
@@ -700,52 +721,80 @@ class LIB: # { CORE : words }
         token_l = token.lower() if isinstance(token, str) else str
 
         if token_l in t.words:
-            xt = t.words[token_l]
+            code = t.words[token_l]
+            argc = t.word_argc.get(token_l, 0)
         elif token_l in e.root.words:
-            xt = e.root.words[token_l]
+            code = e.root.words[token_l]
+            argc = e.root.word_argc.get(token_l, 0)
         else:
             e.raise_RuntimeError("{token_l}: error (-0): Word Not Found By [']")
 
-        t.stack.append(xt)
+        if callable(code):
+            t.stack.append((code,argc))
+        else:
+            t.stack.append(code)
 
         t.state = e.state_INTERPRET
 
 
-    @staticmethod
-    def word_FIND(e, t, c, x):
+    @staticmethod ### FIND ###
+    def word_FIND(e, t, c, word):
 
-        if isinstance(x, int):
+        if isinstance(word, int):
             parts = []
-            for i in range(1, t.memory[x] + 1):
-                parts.append(chr(t.memory[x + i]))
-            ic(parts)
-            x = "".join(parts)
+            for i in range(1, t.memory[word] + 1):
+                parts.append(chr(t.memory[word + i]))
+            word_l = "".join(parts).lower()
+        else:
+            word_l = word.lower()
 
+        code = None
+        if word_l in t.words:
+            code = t.words[word_l]
+            argc = t.word_argc.get(word_l, 0)
+            immediate = t.word_immediate.get(word_l, False)
 
-        x_l = x.lower()
+        elif word_l in e.root.words:
+            code = e.root.words[word_l]
+            argc = e.root.word_argc.get(word_l, 0)
+            immediate = e.root.word_immediate.get(word_l, False)
 
-        xt = None
-        if x_l in t.words:
-            xt = t.words[x_l]
-            im = t.word_immediate.get(x_l, False)
-
-        elif x_l in e.root.words:
-            xt = e.root.words[x_l]
-            im = e.root.word_immediate.get(x_l, False)
-
-        if xt:
-            t.stack.extend([xt, 1 if im else -1])
+        if code:
+            flag = 1 if immediate else -1
+            if callable(code):
+                t.stack.extend([(code, argc), flag])
+            else:
+                t.stack.extend([code, flag])
             return
 
-        t.stack.extend([x, 0])
+        t.stack.extend([word, 0])
 
     @staticmethod ### EXECUTE ###
-    def word_EXECUTE__R(e, t, c):
-        e.execute_tokens(e, t, c, t.stack.pop())
+    def word_EXECUTE__R(e, t, c, xt):
+
+        if not isinstance(xt, tuple):
+            e.execute_tokens(e, t, c, xt)
+            return
+
+        code, argc = xt
+
+        if argc > len(t.stack):
+            details = f"{token}: error(-4): Needs {argc} arg(s)"
+            raise ForthException(details)
+
+        if argc > 0:
+            t.stack, args = t.stack[:-argc], t.stack[-argc:]
+
+        result = code(e, t, c, *args)
+        if not result == None:
+            if isinstance(result, tuple):
+                t.stack.extend(result)
+            else:
+                t.stack.append(result)
 
     @staticmethod ### EX... ###
-    def word_EX_dot_dot_dot__R(e, t, c):
-        LIB.word_EXECUTE__R(e, t, c)
+    def word_EX_dot_dot_dot__R(e, t, c, xt):
+        LIB.word_EXECUTE__R(e, t, c, xt)
 
 import copy
 
