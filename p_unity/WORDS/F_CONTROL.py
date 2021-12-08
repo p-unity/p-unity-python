@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 - 2021, Scott.McCallum@HQ.UrbaneINTER.NET
 
-
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
+__banner__ = r""" (
 
      _       _____    ____    _   _   _______   _____     ____    _
   /\| |/\   / ____|  / __ \  | \ | | |__   __| |  __ \   / __ \  | |
@@ -20,9 +20,12 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 
 
-""" # __banner__
 
-class LIB: # { Control Flow : words }
+
+"""  # __banner__
+
+
+class LIB:  # { Control Flow : words }
 
     """
 
@@ -52,12 +55,20 @@ class LIB: # { Control Flow : words }
     def __init__(self, e, t, **kwargs):
         pass
 
-    @staticmethod ### EXIT ###
+    @staticmethod  ### EXIT ###
     def word_EXIT__R(e, t, c):
         c.EXIT = True
 
-    @staticmethod ### V ###
-    def word_V__R_x(e, t, c):
+    @staticmethod  ### STOP ###
+    def word_STOP__R(e, t, c):
+        c.EXIT = True
+        p = c.parent
+        while p:
+            p.EXIT = True
+            p = p.parent
+
+    @staticmethod  ### V ###
+    def word_V__2R_x(e, t, c):
         call = c
         while call:
             for index in range(-1, (len(call.stack) * -1) - 1, -1):
@@ -66,7 +77,7 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("V: error (-0): Illegal Outside 'Object' DO")
 
-    @staticmethod ### V^ ###
+    @staticmethod  ### V^ ###
     def word_V_carat__R_x(e, t, c):
         call = c
         outer = False
@@ -80,7 +91,7 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("V^: error (-0): Illegal Outside 'Object' DO DO")
 
-    @staticmethod ### K ###
+    @staticmethod  ### K ###
     def word_K__R_x(e, t, c):
         call = c
         while call:
@@ -90,7 +101,7 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("K: error (-0): Illegal Outside Object DO")
 
-    @staticmethod ### K^ ###
+    @staticmethod  ### K^ ###
     def word_K_carat__R_x(e, t, c):
         call = c
         outer = False
@@ -104,7 +115,7 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("K^: error (-0): Illegal Outside Object DO DO")
 
-    @staticmethod ### I ###
+    @staticmethod  ### I ###
     def word_I__R_n(e, t, c):
         call = c
         while call:
@@ -114,7 +125,7 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("I: error (-0): Illegal Outside DO")
 
-    @staticmethod ### J ###
+    @staticmethod  ### J ###
     def word_J__R_n(e, t, c):
         call = c
         outer = False
@@ -128,9 +139,9 @@ class LIB: # { Control Flow : words }
             call = call.parent
         e.raise_RuntimeError("J: error (-0): Illegal Outside DO DO")
 
-    @staticmethod ### DO ###
+    @staticmethod  ### DO ###
     def word_DO__R(e, t, c):
-        struct = {"?":"DO", 0:0, 1:[], "r":t.state}
+        struct = {"?": "DO", 0: 0, 1: [], "r": t.state}
         c.stack.append(struct)
 
         tos = t.stack.pop()
@@ -203,13 +214,13 @@ class LIB: # { Control Flow : words }
         c.stack.pop()
         t.state = struct["r"]
 
-    @staticmethod ### LEAVE ###
+    @staticmethod  ### LEAVE ###
     def word_LEAVE(e, t, c):
         c.stack[-1][0] = False
 
-    @staticmethod ### BEGIN ###
+    @staticmethod  ### BEGIN ###
     def word_BEGIN(e, t, c):
-        c.stack.append({"?":"BEGIN", 0:1, 1:[], "r":t.state})
+        c.stack.append({"?": "BEGIN", 0: 1, 1: [], "r": t.state})
         t.state = LIB.state_BEGIN
 
     @staticmethod
@@ -253,22 +264,17 @@ class LIB: # { Control Flow : words }
 
         t.state = struct["r"]
 
-
-    @staticmethod ### REPEAT ###
+    @staticmethod  ### REPEAT ###
     def word_REPEAT__R(e, t, c):
         e.raise_SyntaxError("REPEAT: error(-0): No BEGIN")
 
-    @staticmethod ### UNTIL ###
+    @staticmethod  ### UNTIL ###
     def word_UNTIL__R(e, t, c):
         e.raise_SyntaxError("UNTIL: error(-0): No BEGIN")
 
-    @staticmethod ### WHILE ###
+    @staticmethod  ### WHILE ###
     def word_WHILE__R(e, t, c):
         e.raise_SyntaxError("WHILE: error(-0): No BEGIN")
-
-
-
-
 
     @staticmethod
     def impl_IF(e, t, c):
@@ -276,16 +282,17 @@ class LIB: # { Control Flow : words }
 
         block = c.stack.pop()
         if block["b"]:
-           e.execute_tokens(e, t, c, block[1])
+            e.execute_tokens(e, t, c, block[1])
         else:
-           e.execute_tokens(e, t, c, block[0])
+            e.execute_tokens(e, t, c, block[0])
 
         t.state = block["r"]
 
 
-    @staticmethod ### IF ###
+
+    @staticmethod  ### IF ###
     def word_IF__R(e, t, c, b):
-        c.stack.append({"?":"IF", "b":b, 0:[], 1:[], "r":t.state})
+        c.stack.append({"?": "IF", "b": b, 0: [], 1: [], "r": t.state})
         t.state = LIB.state_IF_TRUE
 
     @staticmethod
@@ -302,7 +309,7 @@ class LIB: # { Control Flow : words }
 
         c.stack[-1][1].append(token)
 
-    @staticmethod ### ELSE ###
+    @staticmethod  ### ELSE ###
     def word_ELSE__R(e, t, c, token):
         t.state = LIB.state_IF_FALSE
 
@@ -319,4 +326,3 @@ class LIB: # { Control Flow : words }
             return
 
         c.stack[-1][0].append(token)
-

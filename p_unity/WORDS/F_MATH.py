@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 - 2021, Scott.McCallum@HQ.UrbaneINTER.NET
 
-
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
+__banner__ = r""" (
 
      _      __  __              _______   _    _
   /\| |/\  |  \/  |     /\     |__   __| | |  | |
@@ -20,9 +20,12 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
 
 
 
-""" # __banner__
 
-class LIB: # { Mathematical : words }
+
+"""  # __banner__
+
+
+class LIB:  # { Mathematical : words }
 
     """
 
@@ -33,11 +36,11 @@ class LIB: # { Mathematical : words }
     def __init__(self, e, t, **kwargs):
         pass
 
-    @staticmethod ### NEGATE ###
+    @staticmethod  ### NEGATE ###
     def word_NEGATE__R_n2(e, t, c, n1):
         return (n1 * -1,)
 
-    @staticmethod ### + ###
+    @staticmethod  ### + ###
     def word_plus__R_x3(e, t, c, x1, x2):
         r"""
         T{ 0.1 0.2 + -> 0.3 }T ( Simple it seems, yet complex it is )
@@ -49,8 +52,45 @@ class LIB: # { Mathematical : words }
         return (x1 + x2,)
 
 
-    @staticmethod ### - ###
-    def word_minus__R_x3(e, t, c, x1, x2):
+    @staticmethod  ### IN ###
+    def word_IN__R_b(e, t, c, x, s):
+        r"""
+        T{ ({"Key":"Value"}) 'Key IN DROP -> <true> }T
+        """
+        return (x,s in x)
+
+    @staticmethod  ### IN- ###
+    def word_IN_m__R_b(e, t, c, x, s):
+        r"""
+        T{ ({"Key":"Value"}) 'Key IN- -> <true> }T
+        """
+        return (s in x,)
+
+
+    @staticmethod  ### s! ###
+    def word_S_bang__R(e, t, c, x1, x2, x3):
+        r"""
+        T{ ({}) 'Value 'Key s! -> ({"Key":"Value"}) }T
+        """
+        x1[x3] = x2
+        return (x1,)
+
+    @staticmethod  ### s@ ###
+    def word_S_at__R_x1_x3(e, t, c, x1, x2):
+        r"""
+        T{ ({"Key":"Value"}) 'Key s@ -> ({"Key":"Value"}) 'Value }T
+        """
+        return (x1,x1[x2],)
+
+    @staticmethod  ### s@- ###
+    def word_S_at_minus__R_x3(e, t, c, x1, x2):
+        r"""
+        T{ ({"Key":"Value"}) 'Key s@- -> 'Value }T
+        """
+        return (x1[x2],)
+
+    @staticmethod  ### - ###
+    def word_m__R_x3(e, t, c, x1, x2):
         """
         T{ 1+0j 2+0j - -> -1+0j }T
         T{ ([1,2,3]) 2 - -> ([1,3]) }T
@@ -64,37 +104,37 @@ class LIB: # { Mathematical : words }
 
         return (x1 - x2,)
 
-    @staticmethod ### * ###
+    @staticmethod  ### * ###
     def word_times__R_n3(e, t, c, n1, n2):
-        ""
+        """"""
         return (n1 * n2,)
 
-    @staticmethod ### ** ###
+    @staticmethod  ### ** ###
     def word_times_times__R_n3(e, t, c, n1, n2):
-        ""
+        """"""
         return (n1 ** n2,)
 
-    @staticmethod ### SQRT ###
+    @staticmethod  ### SQRT ###
     def word_SQRT__R_n2(e, t, c, n1):
-        ""
+        """"""
         return (sqrt(n1),)
 
-    @staticmethod ### / ###
+    @staticmethod  ### / ###
     def word_divide__R_n3(e, t, c, n1, n2):
-        ""
+        """"""
         return (n1 / n2,)
 
-    @staticmethod ### /MOD ###
+    @staticmethod  ### /MOD ###
     def word_divide_MOD__R_n3_n4(e, t, c, n1, n2):
-        ""
+        """"""
         return divmod(x, n2)[::-1]
 
-    @staticmethod ### MOD ###
+    @staticmethod  ### MOD ###
     def word_MOD__R_n3(e, t, c, n1, n2):
-        ""
+        """"""
         return (n1 % n2,)
 
-    @staticmethod ### ABS ###
+    @staticmethod  ### ABS ###
     def word_ABS__R_n2(e, t, c, n1):
         """
         T{ -2.3 ABS -> 2.3 }T T{ 5.55 ABS -> 5.55 }T
@@ -102,42 +142,37 @@ class LIB: # { Mathematical : words }
         """
         return (abs(n1),)
 
-    @staticmethod ### INVERT ###
+    @staticmethod  ### INVERT ###
     def word_INVERT__R_n2(e, t, c, n1):
-        ""
+        """"""
         return (~n1,)
 
-    @staticmethod ### NAN ###
+    @staticmethod  ### NAN ###
     def word_NAN__R_n(e, t, c):
-        ""
+        """"""
         return (Decimal("Nan"),)
 
-    @staticmethod ### INF ###
+    @staticmethod  ### INF ###
     def word_INF__R_n(e, t, c):
-        ""
+        """"""
         return (Decimal("Infinity"),)
 
-    @staticmethod ### -INF ###
-    def word_minus_INF__R_n(e, t, c):
-        ""
+    @staticmethod  ### -INF ###
+    def word_m_INF__R_n(e, t, c):
+        """"""
         return (Decimal("-Infinity"),)
 
-
-    @staticmethod ### MIN ###
+    @staticmethod  ### MIN ###
     def word_MIN__R_x3(e, t, c, x1, x2):
-        """
-        """
+        """ """
         return (x1,) if x1 < x2 else (x2,)
 
-    @staticmethod ### MAX ###
+    @staticmethod  ### MAX ###
     def word_MAX__R_x3(e, t, c, x1, x2):
-        """
-        """
+        """ """
         return (x1,) if x1 > x2 else (x2,)
 
-
-
-    @staticmethod ### AND ###
+    @staticmethod  ### AND ###
     def word_AND__R_n3(e, t, c, n1, n2):
         """
         T{ 0 0 AND -> 0 }T
@@ -147,45 +182,37 @@ class LIB: # { Mathematical : words }
         """
         return (n1 & n2,)
 
-    @staticmethod ### OR ###
+    @staticmethod  ### OR ###
     def word_OR__R_n3(e, t, c, n1, n2):
-        """
-        """
+        """ """
         return (n1 | n2,)
 
-    @staticmethod ### XOR ###
+    @staticmethod  ### XOR ###
     def word_XOR__R_n3(e, t, c, n1, n2):
-        """
-        """
+        """ """
         return (n1 ^ n2,)
 
-    @staticmethod ### RSHIFT ###
+    @staticmethod  ### RSHIFT ###
     def word_RSHIFT__R_n3(e, t, c, n1, n2):
-        """
-        """
+        """ """
         return (n1 >> n2,)
 
-    @staticmethod ### LSHIFT ###
+    @staticmethod  ### LSHIFT ###
     def word_LSHIFT__R_n3(e, t, c, n1, n2):
-        """
-        """
+        """ """
         return (n1 << n2,)
 
-
-    @staticmethod ### 2* ###
+    @staticmethod  ### 2* ###
     def word_2_times__R_n2(e, t, c, n1):
-        """
-        """
+        """ """
         return (n1 << 1,)
 
-    @staticmethod ### 2/ ###
+    @staticmethod  ### 2/ ###
     def word_2_divide__R_n2(e, t, c, n1):
-        """
-        """
+        """ """
         return (n1 >> 1,)
 
 
 import math
 
 from decimal import Decimal
-
