@@ -28,8 +28,6 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         self.program = {}
         self.lexer = BasicLexer()
         self.parser = BasicParser(self)
-        self.datastack = collections.deque()
-        self.callstack = collections.deque()
         self.variables = collections.defaultdict(int)
         self.variables_nocase = {}
         self.running_program = False
@@ -37,7 +35,6 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def interpret(self, line):
 
         line = line.strip()
-
         if line == '' or line[0] == '#':
             return
 
@@ -122,16 +119,6 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def divide(self, a, b):
         return a / b
 
-    def call_len(self, value):
-        return len(value)
-
-    def call_variable(self, name, value):
-
-        if name.lower() == 'lower':
-            return str(value).lower()
-
-        return None
-
     def get_variable(self, name):
         name = self.variables_nocase[name.lower()]
         return self.variables.get(name, 0)
@@ -207,19 +194,6 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def noop(self):
         pass
 
-    def push(self, *args):
-        for arg in args:
-            self.datastack.append(self.evaluate(arg))
-
-    def pop(self, *args):
-        return self.datastack.pop()
-
-    def top(self, *args):
-        return self.datastack[-1]
-
-    def depth(self, *args):
-        return len(self.datastack)
-
     def print(self, *args):
         print(*(self.evaluate(arg) for arg in args))
 
@@ -236,6 +210,7 @@ from sly.yacc import Parser
 Variable = collections.namedtuple('Variable', ['name'])
 Expression = collections.namedtuple('Expression', ['operation', 'arguments'])
 Statement = collections.namedtuple('Statement', ['operation', 'arguments'])
+
 
 class BasicLexer(Lexer):
     tokens = {
@@ -257,10 +232,6 @@ class BasicLexer(Lexer):
         DIVIDE,
         EQUALS,
         COLON,
-        LBRACKET,
-        RBRACKET,
-        LEN, POP, TOP, DEPTH,
-        LET, PUSH,
     }
 
     ignore = ' \t\n'
@@ -287,17 +258,6 @@ class BasicLexer(Lexer):
     LIST = nocase_match("LIST")
     RUN = nocase_match("RUN")
     GOTO = nocase_match("GOTO")
-
-    LET = nocase_match("LET")
-    PUSH = nocase_match("PUSH")
-
-    LEN = nocase_match("LEN")
-    POP = nocase_match("POP")
-    TOP = nocase_match("TOP")
-    DEPTH = nocase_match("DEPTH")
-
-    LBRACKET = r'\('
-    RBRACKET = r'\)'
 
     ID = r'[A-Za-z_][A-Za-z0-9_]*'
 
@@ -341,7 +301,6 @@ class BasicLexer(Lexer):
         return token
 
 
-
 class LineLexer(Lexer):
     tokens = {LINE}
     ignore = ' '
@@ -356,7 +315,7 @@ class BasicParser(Parser):
     #debugfile = 'lamb.out'
     tokens = BasicLexer.tokens.union(LineLexer.tokens)
     precedence = (
-        ('nonassoc', IF, THEN, LET, PUSH),
+        ('nonassoc', IF, THEN),
         ('left', COLON),
         ('nonassoc', ELSE),
         ('left', EQUALS),
@@ -364,7 +323,6 @@ class BasicParser(Parser):
         ('left', PLUS, MINUS),
         ('left', MULTIPLY, DIVIDE),
         ('nonassoc', UNARY_MINUS),
-        ('left', LEN, POP, TOP, DEPTH),
     )
 
     def __init__(self, interpreter):
@@ -410,10 +368,6 @@ class BasicParser(Parser):
             (parsed.expr, parsed.statements, parsed.statement),
         )
 
-    @_('LET variable EQUALS expr')
-    def statement(self, parsed):
-        return Statement('set_variable', (parsed.variable.name, parsed.expr))
-
     @_('variable EQUALS expr')
     def statement(self, parsed):
         return Statement('set_variable', (parsed.variable.name, parsed.expr))
@@ -425,11 +379,6 @@ class BasicParser(Parser):
     @_('PRINT exprs')
     def statement(self, parsed):
         return Statement('print', parsed.exprs)
-
-    @_('PUSH exprs')
-    def statement(self, parsed):
-        return Statement('push', parsed.exprs)
-
 
     @_('LIST')
     def statement(self, parsed):
@@ -451,26 +400,6 @@ class BasicParser(Parser):
     def exprs(self, parsed):
         parsed.exprs.append(parsed.expr)
         return parsed.exprs
-
-    @_('LEN expr')
-    def expr(self, parsed):
-        return Expression('call_len',[parsed.expr])
-
-    #@_('PUSH expr')
-    #def expr(self, parsed):
-    #    return Expression('push',[parsed.expr])
-
-    @_('POP')
-    def expr(self, parsed):
-        return Expression('pop', [parsed[0]])
-
-    @_('TOP')
-    def expr(self, parsed):
-        return Expression('top', [parsed[0]])
-
-    @_('DEPTH')
-    def expr(self, parsed):
-        return Expression('depth', [parsed[0]])
 
     @_('variable EQUALS expr')
     def expr(self, parsed):
@@ -498,10 +427,6 @@ class BasicParser(Parser):
     @_('expr DIVIDE expr')
     def expr(self, parsed):
         return Expression('divide', [parsed.expr0, parsed.expr1])
-
-    @_('LBRACKET expr RBRACKET')
-    def expr(self, parsed):
-        return parsed.expr
 
     @_(
         'NUMBER',
