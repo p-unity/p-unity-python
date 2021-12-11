@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 - 2021, Scott.McCallum@HQ.UrbaneINTER.NET
 
+__banner__ = r""" (
 
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
                   _           _   _
                  (_)         (_) | |

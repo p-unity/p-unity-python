@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 - 2021, Scott.McCallum@HQ.UrbaneINTER.NET
 
+__banner__ = r""" (
 
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
          _   _            ____                _____   _____    _____
         | | (_)          |  _ \      /\      / ____| |_   _|  / ____|
@@ -34,85 +35,47 @@ class IDE: # { The p-unity IDE: Intergrated Development Environment }
         builtins = __import__('builtins')
         setattr(builtins, 'ic', ic)
 
-        self.e = BASIC.Engine(run_tests=2, **kwargs)
+        self.engine = BASIC.Engine(run_tests=2, **kwargs)
 
-        self.c = None
-        if 'stdscr' in kwargs:
-            self.c = kwargs['stdscr']
+    def run_stdio(self, run=None, debug=False):
 
+        if run:
+            for line in run.split('\n'):
+                self.engine.interpret(line)
 
-    def run_curses(self):
+            self.engine.interpret("RUN")
 
-        from curses import wrapper
+            if not debug: return
 
-        #win1 = scr.new_win(orig=(0, 0), size=(80, 20))
-        #win2 = scr.new_win(orig=(0, 20), size=(80, 4))
-        #win3 = scr.new_win(orig=(0, 24), size=(80, 1))
-        dir(self.c)
-        win3 = self.c.newwin(0, 0, 80, 1)
-        #win1.border()
-        #win2.border()
-        #win1.background('+', color='red')
-        #win2.background('.', color=('green', 'blue'))
-        win3.background(' ', color=('green', 'red'))
-        #win1.refresh()
-        #win2.refresh()
-        win3.refresh()
-        s = win3.getstr((0, 0), echo=True)
-        #win2.write(s, (1, 1), color=('red', 'black'))
-        #win2.refresh()
-        #win1.write('Press q to quit', (1, 1), color=('black', 'red'))
-        #while win1.getkey() != 'q':
-        #    pass
+        while True:
+            line = ''
 
+            try:
+                print('\nReady')
 
-    def run_stdio(self):
-        sys.exit(e.running)
+                while not line:
+                    line = input()
 
+            except KeyboardInterrupt:
+                print()
+                break
 
-def __ide_curses(stdscr):
-    ide = IDE(stdscr=stdscr)
-    ide.run_curses()
-    del ide
+            except EOFError:
+                break
 
-def ide_curses():
-    wrapper(__ide_curses)
+            try:
+                self.engine.interpret(line)
 
-def ide_stdio():
+            except SyntaxError as exception:
+                print(type(exception).__name__ + ':', exception)
+
+            except KeyboardInterrupt:
+                if engine.running_program:
+                    print(f'Break in {interpreter.last_program_lineno}')
+
+def ide_stdio(run=None,debug=True):
     ide = IDE()
-    ide.run_stdio()
-    del ide
-
-def ide_stdio():
-
-    engine = BASIC.Engine(run_tests=2)
-
-    while True:
-        line = ''
-
-        try:
-            print('\nReady')
-
-            while not line:
-                line = input()
-
-        except KeyboardInterrupt:
-            print()
-            break
-
-        except EOFError:
-            break
-
-        try:
-            engine.interpret(line)
-
-        except SyntaxError as exception:
-            print(type(exception).__name__ + ':', exception)
-
-        except KeyboardInterrupt:
-            if engine.running_program:
-                print(f'Break in {interpreter.last_program_lineno}')
-
+    ide.run_stdio(run=run,debug=debug)
 
 import sys
 

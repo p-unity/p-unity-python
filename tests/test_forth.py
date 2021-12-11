@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) https://github.com/scott91e1 ~ 2021 - 2021
 
+__banner__ = r""" (
 
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
 
   _            _              ______ ____  _____ _______ _    _
  | |          | |            |  ____/ __ \|  __ \__   __| |  | |
@@ -13,14 +14,13 @@ __banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
   \__\___||___/\__|          |_|    \____/|_|  \_\ |_|  |_|  |_|
                      ______
                     |______|
-
 )
 
 
 
 
 
-""" # __banner__
+"""  # __banner__
 
 
 class TestFORTH:
@@ -29,41 +29,49 @@ class TestFORTH:
 
     def test_0000(self):
         r"""
+        ```
         1 2 3
+        : hello 'World ;
         """
-        e = FORTH.Engine(self.test_0000.__doc__, **self.options)
+        e = FORTH.Engine(run=self.test_0000.__doc__, **self.options)
         assert e.root.stack == [1, 2, 3]
         assert e.root.memory == {}
+        assert e.root.test["f"] == 0
 
     def test_0001(self):
         r"""
+        ```
         'Hello 'World
         """
         e = FORTH.Engine(self.test_0001.__doc__, **self.options)
         assert e.root.stack == ["Hello", "World"]
         assert e.root.memory == {}
+        assert e.root.test["f"] == 0
 
     def test_0002(self):
         r"""
+        ```
         123 456 !
         """
         e = FORTH.Engine(self.test_0002.__doc__, **self.options)
         assert e.root.stack == []
-        assert e.root.memory == {456 : 123}
-
+        assert e.root.memory == {456: 123}
+        assert e.root.test["f"] == 0
 
     def test_0003(self):
         r"""
+        ```
         123 'FOO_1 !
         'Baz 'FOO_2 !
         """
         e = FORTH.Engine(self.test_0003.__doc__, **self.options)
         assert e.root.stack == []
-        assert e.root.memory == {"FOO_1" : 123, "FOO_2": "Baz"}
-
+        assert e.root.memory == {"FOO_1": 123, "FOO_2": "Baz"}
+        assert e.root.test["f"] == 0
 
     def test_1000(self):
         r"""
+        ```
         T{ 'Hello 'World DROP -> ("Hello") }T
         """
         e = FORTH.Engine(self.test_1000.__doc__, **self.options)
@@ -74,6 +82,8 @@ class TestFORTH:
         assert e.root.test["f"] == 0
 
     BASIC_ASSUMPTIONS = r"""
+
+```
 
 T{ -> }T               \ START WITH CLEAN SLATE
 ( TEST IF ANY BITS ARE SET; ANSWER IN BASE 1 )
@@ -89,6 +99,8 @@ T{ -1 BITSSET? -> 0 0 }T
         assert e.root.test["f"] == 0
 
     BOOLEANS_INVERT = r"""
+
+```
 
 T{ 0 0 AND -> 0 }T
 T{ 0 1 AND -> 0 }T
@@ -121,12 +133,13 @@ T{ 1S 1S XOR -> 0S }T
 
         """
 
-
     def test_LSHIFT_RSHIFT(self):
         e = FORTH.Engine(self.LSHIFT_RSHIFT, **self.options)
         assert e.root.test["f"] == 0
 
     LSHIFT_RSHIFT = r"""
+
+```
 
 0    CONSTANT 0S
 0 INVERT CONSTANT 1S
@@ -169,12 +182,13 @@ T{ MSB 1 RSHIFT 2* -> MSB }T
 
         """
 
-
     def test_COMPARISONS(self):
         e = FORTH.Engine(self.COMPARISONS, **self.options)
         assert e.root.test["f"] == 0
 
     COMPARISONS = r"""
+
+```
 
 0    CONSTANT 0S
 0 INVERT CONSTANT 1S
@@ -253,12 +267,13 @@ T{ 1 -1 MAX -> 1 }T
 
         """
 
-
     def test_STACK_OPS(self):
         e = FORTH.Engine(self.STACK_OPS, **self.options)
         assert e.root.test["f"] == 0
 
     STACK_OPS = r"""
+
+```
 
 T{ 1 2 2DROP -> }T
 T{ 1 2 2DUP -> 1 2 1 2 }T
@@ -279,12 +294,13 @@ T{ 1 2 SWAP -> 2 1 }T
 
     """
 
-
     def test_RETURN_STACK(self):
         e = FORTH.Engine(self.RETURN_STACK, **self.options)
         assert e.root.test["f"] == 0
 
     RETURN_STACK = r"""
+
+```
 
 0 CONSTANT 0S
 0 INVERT CONSTANT 1S
@@ -304,6 +320,8 @@ T{ 1S GR1 -> 1S }T   ( RETURN STACK HOLDS CELLS )
         assert e.root.test["f"] == 0
 
     ADD_SUBTRACT = r"""
+
+```
 
 T{ 0 5 + -> 5 }T
 T{ 5 0 + -> 5 }T
@@ -355,6 +373,8 @@ T{ -1 ABS -> 1 }T
         assert e.root.test["f"] == 0
 
     MULTIPLY = r"""
+
+```
 
 # T{ 0 S>D -> 0 0 }T
 # T{ 1 S>D -> 1 0 }T
@@ -418,6 +438,8 @@ T{ -3 -3 * -> 9 }T
 
     HERE = r"""
 
+```
+
 0 CONSTANT 0S
 0 INVERT CONSTANT 1S
 
@@ -449,19 +471,68 @@ T{ 5 1ST ! -> }T
 T{ 1ST @ 2ND @ -> 5 2 }T
 T{ 6 2ND ! -> }T
 T{ 1ST @ 2ND @ -> 5 6 }T
-# T{ 1ST 2@ -> 6 5 }T
-# T{ 2 1 1ST 2! -> }T
-# T{ 1ST 2@ -> 2 1 }T
-# T{ 1S 1ST !  1ST @ -> 1S }T      \ CAN STORE CELL-WIDE VALUE
+
+( TODO
+
+T{ 1ST 2@ -> 6 5 }T
+{ 2 1 1ST 2! -> }T
+T{ 1ST 2@ -> 2 1 }T
+T{ 1S 1ST !  1ST @ -> 1S }T      \ CAN STORE CELL-WIDE VALUE
+
+)
+
+HERE 1 C,
+HERE 2 C,
+CONSTANT 2NDC
+CONSTANT 1STC
+T{ 1STC 2NDC U< -> <TRUE> }T      \ HERE MUST GROW WITH ALLOT
+T{ 1STC CHAR+ -> 2NDC }T         \ ... BY ONE CHAR
+T{ 1STC 1 CHARS + -> 2NDC }T
+T{ 1STC C@ 2NDC C@ -> 1 2 }T
+T{ 3 1STC C! -> }T
+T{ 1STC C@ 2NDC C@ -> 3 2 }T
+T{ 4 2NDC C! -> }T
+T{ 1STC C@ 2NDC C@ -> 3 4 }T
+
+ALIGN 1 ALLOT HERE ALIGN HERE 3 CELLS ALLOT
+CONSTANT A-ADDR  CONSTANT UA-ADDR
+T{ UA-ADDR ALIGNED -> A-ADDR }T
+T{    1 A-ADDR C!  A-ADDR C@ ->    1 }T
+T{ 1234 A-ADDR  !  A-ADDR  @ -> 1234 }T
+T{ 123 456 A-ADDR 2!  A-ADDR 2@ -> 123 456 }T
+T{ 2 A-ADDR CHAR+ C!  A-ADDR CHAR+ C@ -> 2 }T
+T{ 3 A-ADDR CELL+ C!  A-ADDR CELL+ C@ -> 3 }T
+T{ 1234 A-ADDR CELL+ !  A-ADDR CELL+ @ -> 1234 }T
+T{ 123 456 A-ADDR CELL+ 2!  A-ADDR CELL+ 2@ -> 123 456 }T
+
+
+#
+# TODO (BITS does not terminate)
+#
+# 1S 1 RSHIFT INVERT CONSTANT MSB
+#
+# : BITS ( X -- U )
+#    0 SWAP BEGIN DUP WHILE DUP MSB AND IF >R 1+ R> THEN 2* REPEAT DROP ;
+# ( CHARACTERS >= 1 AU, <= SIZE OF CELL, >= 8 BITS )
+# T{ 1 CHARS 1 < -> <FALSE> }T
+# T{ 1 CHARS 1 CELLS > -> <FALSE> }T
+#
+# ( CELLS >= 1 AU, INTEGRAL MULTIPLE OF CHAR SIZE, >= 16 BITS )
+# T{ 1 CELLS 1 < -> <FALSE> }T
+# T{ 1 CELLS 1 CHARS MOD -> 0 }T
+#
+# T{ 1S BITS 10 < -> <FALSE> }T
+#
 
     """
-
 
     def test_COMPILE(self):
         e = FORTH.Engine(self.COMPILE, **self.options)
         assert e.root.test["f"] == 0
 
     COMPILE = r"""
+
+```
 
 T{ : GT1 123 ; -> }T
 T{ ' GT1 EXECUTE -> 123 }T
@@ -500,6 +571,8 @@ T{ GT7 -> 345 }T
         assert e.root.test["f"] == 0
 
     IF_BEGIN_WHILE_RECURSE = r"""
+
+```
 
 T{ : GI1 IF 123 THEN ; -> }T
 T{ : GI2 IF 123 ELSE 234 THEN ; -> }T
@@ -548,6 +621,8 @@ T{ 6 GI4 -> 6 7 }T
 
     DO_LOOP = r"""
 
+```
+
 T{ : GD1 DO I LOOP ; -> }T
 T{ 4 1 GD1 -> 1 2 3 }T
 T{ 2 -1 GD1 -> -1 0 1 }T
@@ -586,6 +661,8 @@ T{ 6 GD5 -> 234 }T
         assert e.root.test["f"] == 0
 
     DEFINING_WORDS = r"""
+
+```
 
 T{ 123 CONSTANT X123 -> }T
 T{ X123 -> 123 }T
@@ -629,15 +706,128 @@ T{ CR1 @ -> 1 }T
 
     """
 
-from p_unity import FORTH
+    def test_EVALUATE(self):
+        e = FORTH.Engine(self.EVALUATE, **self.options)
+        assert e.root.test["f"] == 0
+
+    EVALUATE = r"""
+
+```
+
+( TODO
+
+: GE1 S" 123" ; IMMEDIATE
+: GE2 S" 123 1+" ; IMMEDIATE
+: GE3 S" : GE4 345 ;" ;
+: GE5 EVALUATE ; IMMEDIATE
+
+T{ GE1 EVALUATE -> 123 }T         \ TEST EVALUATE IN INTERP. STATE
+T{ GE2 EVALUATE -> 124 }T
+T{ GE3 EVALUATE -> }T
+T{ GE4 -> 345 }T
+
+T{ : GE6 GE1 GE5 ; -> }T         \ TEST EVALUATE IN COMPILE STATE
+T{ GE6 -> 123 }T
+T{ : GE7 GE2 GE5 ; -> }T
+T{ GE7 -> 124 }T
+
+)
+
+    """
+
+    def test_SOURCE(self):
+        e = FORTH.Engine(self.SOURCE, **self.options)
+        assert e.root.test["f"] == 0
+
+    SOURCE = r"""
+
+```
+
+( TODO
+
+: GS1 S" SOURCE" 2DUP EVALUATE
+       >R SWAP >R = R> R> = ;
+T{ GS1 -> <TRUE> <TRUE> }T
+
+VARIABLE SCANS
+: RESCAN?  -1 SCANS +! SCANS @ IF 0 >IN ! THEN ;
+
+T{ 2 SCANS !
+345 RESCAN?
+-> 345 345 }T
+
+: GS2  5 SCANS ! S" 123 RESCAN?" EVALUATE ;
+T{ GS2 -> 123 123 123 123 123 }T
+
+: GS3 WORD COUNT SWAP C@ ;
+T{ BL GS3 HELLO -> 5 CHAR H }T
+T{ CHAR " GS3 GOODBYE" -> 7 CHAR G }T
+T{ BL GS3
+DROP -> 0 }T            \ BLANK LINE RETURN ZERO-LENGTH STRING
+
+: GS4 SOURCE >IN ! DROP ;
+T{ GS4 123 456
+-> }T
+
+)
+
+    """
+
+    def test_FILL_MOVE(self):
+        e = FORTH.Engine(self.FILL_MOVE, **self.options)
+        assert e.root.test["f"] == 0
+
+    FILL_MOVE = r"""
+
+```
+
+CREATE FBUF 00 C, 00 C, 00 C,
+CREATE SBUF 12 C, 34 C, 56 C,
+: SEEBUF FBUF C@  FBUF CHAR+ C@  FBUF CHAR+ CHAR+ C@ ;
+
+T{ FBUF 0 20 FILL -> }T
+T{ SEEBUF -> 00 00 00 }T
+
+T{ FBUF 1 20 FILL -> }T
+T{ SEEBUF -> 20 00 00 }T
+
+T{ FBUF 3 20 FILL -> }T
+T{ SEEBUF -> 20 20 20 }T
+
+T{ FBUF FBUF 3 CHARS MOVE -> }T      \ BIZARRE SPECIAL CASE
+T{ SEEBUF -> 20 20 20 }T
+
+T{ SBUF FBUF 0 CHARS MOVE -> }T
+T{ SEEBUF -> 20 20 20 }T
+
+T{ SBUF FBUF 1 CHARS MOVE -> }T
+T{ SEEBUF -> 12 20 20 }T
+
+T{ SBUF FBUF 3 CHARS MOVE -> }T
+T{ SEEBUF -> 12 34 56 }T
+
+( TODO
+
+T{ FBUF FBUF CHAR+ 2 CHARS MOVE -> }T
+T{ SEEBUF -> 12 12 34 }T
+
+T{ FBUF CHAR+ FBUF 2 CHARS MOVE -> }T
+T{ SEEBUF -> 12 34 34 }T
+
+)
+
+    """
+
+
+from cubed4th import FORTH
 
 try:
     from icecream import ic
 except ImportError:  # Graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
-builtins = __import__('builtins')
-setattr(builtins, 'ic', ic)
+builtins = __import__("builtins")
+setattr(builtins, "ic", ic)
 
 #
 # \ From: John Hayes S1I
@@ -654,4 +844,3 @@ setattr(builtins, 'ic', ic)
 # \ I HAVEN'T FIGURED OUT HOW TO TEST KEY, QUIT, ABORT, OR ABORT"...
 # \ I ALSO HAVEN'T THOUGHT OF A WAY TO TEST ENVIRONMENT?...
 #
-

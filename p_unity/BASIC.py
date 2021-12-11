@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2021 - 2021, Scott.McCallum@HQ.UrbaneINTER.NET
 
-
-__banner__ = r""" ( Copyright Intermine.com.au Pty Ltd. or its affiliates.
-                    License SPDX: Programming-Unity-10.42 or as negotiated.
+__banner__ = r""" (
 
   __    ___       ____                _____   _____    _____
  /_ |  / _ \     |  _ \      /\      / ____| |_   _|  / ____|    _     _
@@ -26,11 +26,19 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
     def __init__(self, run_tests=None):
         self.program = {}
+        self.lineno = 0
         self.lexer = BasicLexer()
         self.parser = BasicParser(self)
-        self.variables = collections.defaultdict(int)
-        self.variables_nocase = {}
         self.running_program = False
+
+        self.eSCRPT = None
+
+        self.eFORTH = p_unity.FORTH.Engine()
+        self.eFORTH_abi = {}
+
+        self.connection = None
+        self.statements = None
+        self.cursor = None
 
     def interpret(self, line):
 
@@ -94,14 +102,6 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         if isinstance(node, Expression):
             return_value = self.execute(*node)
 
-        if isinstance(return_value, float):
-            int_return_value = int(return_value)
-            return_value = (
-                int_return_value
-                if math.isclose(int_return_value, return_value)
-                else return_value
-            )
-
         return return_value
 
     def negative(self, a):
@@ -120,22 +120,22 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         return a / b
 
     def get_variable(self, name):
-        name = self.variables_nocase[name.lower()]
-        return self.variables.get(name, 0)
+        return self.eFORTH.root.memory.get(name.lower(), 0)
 
     def set_variable(self, name, value):
-        self.variables[name] = self.evaluate(value)
-        self.variables_nocase[name.lower()] = name
+        self.eFORTH.root.memory[name.lower()] = self.evaluate(value)
 
     def compare_variable(self, name, value):
-        name = self.variables_nocase[name.lower()]
-        return -1 if self.variables[name] == value else 0
+        return -1 if self.eFORTH.root.memory[name.lower()] == value else 0
 
     def add_program_line(self, lineno, line):
         self.program[lineno] = line
 
     def remove_program_line(self, lineno):
         self.program.pop(lineno, None)
+
+    def end_program(self):
+        self.running_program = False
 
     def run_program(self, lineno=None):
         if not self.program:
@@ -197,12 +197,64 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def print(self, *args):
         print(*(self.evaluate(arg) for arg in args))
 
+    def format(self, *args):
+        string = self.evaluate(args[0])
+        if len(args) == 1:
+            print(string.format(**self.eFORTH.root.memory))
+        else:
+            format_args = (self.evaluate(arg) for arg in args)
+            print(string.format(*format_args))
+
+    def forth(self, *args):
+
+        depth = len(self.eFORTH.root.stack)
+
+        if len(args) > 1:
+            for arg in args[1:]:
+                self.eFORTH.root.stack.append(self.evaluate(arg))
+
+        self.eFORTH.execute(self.evaluate(args[0]))
+
+        for k, v in self.eFORTH_abi.items():
+            if k in self.eFORTH.root.memory:
+                del self.eFORTH.root.memory[k]
+
+        self.eFORTH_abi = {}
+
+        results = self.eFORTH.root.stack[depth:]
+        results.reverse()
+        index = 0
+        for result in results:
+            self.eFORTH.root.memory[f"f{index}"] = result
+            self.eFORTH_abi[f"f{index}"] = result
+            index += 1
+
     def list(self):
         for lineno, line in sorted(self.program.items()):
             print(f'{lineno} {line}')
 
-import collections
+    def sql(self, *args):
+        arg0 = self.evaluate(args[0])
+        if self.connection == None:
+            if self.statements == None:
+                if arg0.upper() == "DECLARE":
+                    self.statements = {}
+            else:
+                if arg0.upper() == "DECLARE_DONE":
+                    import sqlite3
+                    self.connection = sqlite3.connect("example.sqlite")
+                    self.cursor = self.connection.cursor()
+                else:
+                    self.statements[arg0.lower()] = self.evaluate(args[1])
+            return
+
+        statement = self.statements[arg0.lower()]
+        #self.cursor.execute(statement,(self.evaluate(arg) for arg in args[1:]))
+        self.cursor.execute(statement)
+        self.eFORTH.root.memory["sql"] = self.cursor.fetchall()
+
 import math
+import collections
 
 from sly.lex import Lexer, Token
 from sly.yacc import Parser
@@ -211,19 +263,24 @@ Variable = collections.namedtuple('Variable', ['name'])
 Expression = collections.namedtuple('Expression', ['operation', 'arguments'])
 Statement = collections.namedtuple('Statement', ['operation', 'arguments'])
 
-
 class BasicLexer(Lexer):
     tokens = {
         ID,
         REM,
+        FORMAT,
         PRINT,
+        FORTH,
+        SQL,
         IF,
         THEN,
         ELSE,
         LIST,
         RUN,
+        END,
         GOTO,
         STRING,
+        SSTRING,
+        RSTRING,
         LINENO,
         NUMBER,
         PLUS,
@@ -232,6 +289,8 @@ class BasicLexer(Lexer):
         DIVIDE,
         EQUALS,
         COLON,
+        LPAREN,
+        RPAREN
     }
 
     ignore = ' \t\n'
@@ -243,6 +302,8 @@ class BasicLexer(Lexer):
     DIVIDE = r'/'
     EQUALS = r'='
     COLON = r':'
+    LPAREN = r'\('
+    RPAREN = r'\)'
 
     def nocase_match(name):
         result = []
@@ -250,16 +311,20 @@ class BasicLexer(Lexer):
             result.append("[{0}{1}]".format(letter, letter.lower()))
         return r''.join(result)
 
-    REM = r"(?:REM|').*"
+    REM = r"(?:[Rr][Ee][Mm]|').*"
     PRINT = nocase_match("PRINT")
+    FORMAT = nocase_match("FORMAT")
+    FORTH = nocase_match("FORTH")
+    SQL = nocase_match("SQL")
     IF = nocase_match("IF")
     THEN = nocase_match("THEN")
     ELSE = nocase_match("ELSE")
     LIST = nocase_match("LIST")
     RUN = nocase_match("RUN")
+    END = nocase_match("END")
     GOTO = nocase_match("GOTO")
 
-    ID = r'[A-Za-z_][A-Za-z0-9_]*'
+    ID = r'[A-Za-z_][A-Za-z0-9_$~!]*'
 
     @_(r'(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)')
     def NUMBER(self, token):
@@ -267,13 +332,11 @@ class BasicLexer(Lexer):
             self.index
             and self.text[:token.index] != token.index * ' '
         ):
-            float_value = float(token.value)
-            int_value = int(float_value)
-            token.value = (
-                int_value
-                if math.isclose(int_value, float_value)
-                else float_value
-            )
+
+            if '.' not in token.value:
+                token.value = (int(token.value))
+            else:
+                token.value = (Decimal(token.value))
 
         else:
             if '.' not in token.value:
@@ -291,14 +354,51 @@ class BasicLexer(Lexer):
 
         return token
 
-    @_(r'"[^"]*"?')
-    def STRING(self, token):
+
+    @_(r'\".*?(?<!\\)(\\\\)*\"')
+    def STRING(self, t):
+        """
+        Parsing strings (including escape characters)
+        """
+        t.value = t.value[1:-1]
+        t.value = t.value.replace(r"\n", "\n")
+        t.value = t.value.replace(r"\t", "\t")
+        t.value = t.value.replace(r"\\", "\\")
+        t.value = t.value.replace(r"\"", "\"")
+        t.value = t.value.replace(r"\a", "\a")
+        t.value = t.value.replace(r"\b", "\b")
+        t.value = t.value.replace(r"\r", "\r")
+        t.value = t.value.replace(r"\t", "\t")
+        t.value = t.value.replace(r"\v", "\v")
+        return t
+
+    @_(r"~.*?(?<!\\)(\\\\)*~")
+    def SSTRING(self, t):
+        """
+        Parsing strings (including escape characters)
+        """
+        t.value = t.value[1:-1]
+        t.value = t.value.replace(r"\n", "\n")
+        t.value = t.value.replace(r"\t", "\t")
+        t.value = t.value.replace(r"\\", "\\")
+        t.value = t.value.replace(r"\a", "\a")
+        t.value = t.value.replace(r"\b", "\b")
+        t.value = t.value.replace(r"\r", "\r")
+        t.value = t.value.replace(r"\t", "\t")
+        t.value = t.value.replace(r"\v", "\v")
+        return t
+
+    @_(r'`[^`]*`?')
+    def RSTRING(self, token):
         token.value = token.value[1:]
 
-        if token.value.endswith('"'):
+        if token.value.endswith('`'):
             token.value = token.value[:-1]
 
         return token
+
+
+
 
 
 class LineLexer(Lexer):
@@ -376,9 +476,21 @@ class BasicParser(Parser):
     def statement(self, parsed):
         return Statement('noop', [])
 
+    @_('FORMAT exprs')
+    def statement(self, parsed):
+        return Statement('format', parsed.exprs)
+
+    @_('SQL exprs')
+    def statement(self, parsed):
+        return Statement('sql', parsed.exprs)
+
     @_('PRINT exprs')
     def statement(self, parsed):
         return Statement('print', parsed.exprs)
+
+    @_('FORTH exprs')
+    def statement(self, parsed):
+        return Statement('forth', parsed.exprs)
 
     @_('LIST')
     def statement(self, parsed):
@@ -387,6 +499,10 @@ class BasicParser(Parser):
     @_('RUN')
     def statement(self, parsed):
         return Statement('run_program', [])
+
+    @_('END')
+    def statement(self, parsed):
+        return Statement('end_program', [])
 
     @_('GOTO expr')
     def statement(self, parsed):
@@ -412,6 +528,10 @@ class BasicParser(Parser):
     def expr(self, parsed):
         return Expression('negative', [parsed.expr])
 
+    @_('LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return parsed.expr
+
     @_('expr PLUS expr')
     def expr(self, parsed):
         return Expression('add', [parsed.expr0, parsed.expr1])
@@ -431,6 +551,8 @@ class BasicParser(Parser):
     @_(
         'NUMBER',
         'STRING',
+        'SSTRING',
+        'RSTRING',
     )
     def expr(self, parsed):
         return parsed[0]
@@ -452,4 +574,7 @@ class BasicParser(Parser):
             f'Syntax error at line {token.lineno}, token={token.type}'
         )
 
+import p_unity.FORTH
+
+from decimal import Decimal
 

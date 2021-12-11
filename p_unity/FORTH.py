@@ -41,6 +41,9 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
         if not run == None:
             self.guards = "```"
 
+        self.eBASIC = None
+        self.eSCRPT = None
+
         self.digits = {}
         for digit in "#$%-01234567890":
             self.digits[digit] = True
@@ -496,12 +499,17 @@ class Engine:  # { The Reference Implementation of FORTH^3 : p-unity }
     def call(self, method):
         self.execute(method, include=True)
 
+    def interpret(self, line):
+        self.execute(lines=[line], include=True)
+
     def execute(self, lines, guards="", include=False):
         guards = self.guards if guards == "" else guards
         include = True if guards == "" else include
         self.call.EXIT = False
 
-        lines = lines.split("\n")
+        if isinstance(lines, str):
+            lines = lines.split("\n")
+
         while len(lines):
 
             line = lines.pop(0)
