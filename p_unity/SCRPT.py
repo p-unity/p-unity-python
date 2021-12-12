@@ -229,6 +229,7 @@ class Process:
 
                 return struct
             elif action == 'import':
+                pass
                 #base_dir = getenv('OPATH')
                 #if base_dir is None:
                 #    base_dir = dirname(__file__)
@@ -1149,6 +1150,9 @@ class OParser(Parser):
 
 from decimal import Decimal
 from math import ceil, floor, sqrt, log
+
+import p_unity.FORTH
+import p_unity.BASIC
 
 #
 # https://github.com/oransimhony/o/blob/master/LICENSE

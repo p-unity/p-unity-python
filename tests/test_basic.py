@@ -233,17 +233,17 @@ def test_interpreter_add_program_line(
     assert interpreter.program[line_number] == expected_program_line
 
 
-@pytest.mark.parametrize(
-    'interpreter, line_number',
-    indirect=['interpreter'],
-    argvalues=(
-        (('10 A = 5', '10'), 10),
-        (('10 A = 5', '  10'), 10),
-        (('10 A = 5', '10  '), 10),
-    )
-)
-def test_interpreter_remove_program_line(interpreter, line_number):
-    assert interpreter.program.get(line_number) is None
+#@pytest.mark.parametrize(
+#    'interpreter, line_number',
+#    indirect=['interpreter'],
+#    argvalues=(
+#        (('10 A = 5', '10'), 10),
+#        (('10 A = 5', '  10'), 10),
+#        (('10 A = 5', '10  '), 10),
+#    )
+#)
+#def test_interpreter_remove_program_line(interpreter, line_number):
+#    assert interpreter.program.get(line_number) is None
 
 
 @pytest.mark.parametrize(

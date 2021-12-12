@@ -237,10 +237,10 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         arg0 = self.evaluate(args[0])
         if self.connection == None:
             if self.statements == None:
-                if arg0.upper() == "DECLARE":
+                if arg0.upper() == "STATEMENTS_BEGIN":
                     self.statements = {}
             else:
-                if arg0.upper() == "DECLARE_DONE":
+                if arg0.upper() == "STATEMENTS_END":
                     import sqlite3
                     self.connection = sqlite3.connect("example.sqlite")
                     self.cursor = self.connection.cursor()
@@ -249,9 +249,12 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
             return
 
         statement = self.statements[arg0.lower()]
-        #self.cursor.execute(statement,(self.evaluate(arg) for arg in args[1:]))
-        self.cursor.execute(statement)
-        self.eFORTH.root.memory["sql"] = self.cursor.fetchall()
+        if len(args) == 1:
+            self.cursor.execute(statement)
+        else:
+            args = tuple((self.evaluate(arg) for arg in args[1:]))
+            self.cursor.execute(statement,args)
+        self.eFORTH.root.memory["s"] = self.cursor.fetchall()
 
 import math
 import collections
@@ -287,6 +290,7 @@ class BasicLexer(Lexer):
         MINUS,
         MULTIPLY,
         DIVIDE,
+        ANSWER,
         EQUALS,
         COLON,
         LPAREN,
@@ -323,6 +327,7 @@ class BasicLexer(Lexer):
     RUN = nocase_match("RUN")
     END = nocase_match("END")
     GOTO = nocase_match("GOTO")
+    ANSWER = nocase_match("ANSWER")
 
     ID = r'[A-Za-z_][A-Za-z0-9_$~!]*'
 
@@ -531,6 +536,10 @@ class BasicParser(Parser):
     @_('LPAREN expr RPAREN')
     def expr(self, parsed):
         return parsed.expr
+
+    @_('ANSWER expr')
+    def expr(self, parsed):
+        return Expression('answer', [parsed.expr0, parsed.expr1])
 
     @_('expr PLUS expr')
     def expr(self, parsed):

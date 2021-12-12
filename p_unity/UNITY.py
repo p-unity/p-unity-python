@@ -62,8 +62,12 @@ class Engine:  # { The Reference Implementation of p-unity }
             gather[language] = by_lang
 
         if control == "forth":
+            from .FORTH import Engine as EngineFORTH
             self.engine = EngineFORTH()
             if "basic" in gather:
+                if not self.engine.eBASIC:
+                    from .BASIC import Engine as EngineBASIC
+                    self.engine.eBASIC = EngineBASIC()
                 for block, line in gather["basic"]:
                     self.engine.eBASIC.interpret(line)
 
@@ -74,6 +78,7 @@ class Engine:  # { The Reference Implementation of p-unity }
             self.engine.execute(lines=lines, include=True)
 
         elif control == "basic":
+            from .BASIC import Engine as EngineBASIC
             self.engine = EngineBASIC()
             if "forth" in gather:
                 for block, line in gather["forth"]:
@@ -83,11 +88,4 @@ class Engine:  # { The Reference Implementation of p-unity }
                 self.engine.interpret(line)
 
             self.engine.interpret("run")
-
-
-
-from .FORTH import Engine as EngineFORTH
-from .BASIC import Engine as EngineBASIC
-
-
 
