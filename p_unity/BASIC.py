@@ -26,6 +26,7 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
     def __init__(self, run_tests=None):
         self.program = {}
+        self.cache = {}
         self.lineno = 0
         self.lexer = BasicLexer()
         self.parser = BasicParser(self)
@@ -35,6 +36,8 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
         self.eFORTH = p_unity.FORTH.Engine()
         self.eFORTH_abi = {}
+
+        self.eFORTH.root.memory["__name__"] = "__main__"
 
         self.connection = None
         self.statements = None
@@ -250,7 +253,7 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
         statement = self.statements[arg0.lower()]
         if len(args) == 1:
-            self.cursor.execute(statement)
+            self.cursor.execute(statement, self.eFORTH.root.memory)
         else:
             args = tuple((self.evaluate(arg) for arg in args[1:]))
             self.cursor.execute(statement,args)
@@ -290,7 +293,6 @@ class BasicLexer(Lexer):
         MINUS,
         MULTIPLY,
         DIVIDE,
-        ANSWER,
         EQUALS,
         COLON,
         LPAREN,
@@ -327,7 +329,6 @@ class BasicLexer(Lexer):
     RUN = nocase_match("RUN")
     END = nocase_match("END")
     GOTO = nocase_match("GOTO")
-    ANSWER = nocase_match("ANSWER")
 
     ID = r'[A-Za-z_][A-Za-z0-9_$~!]*'
 
@@ -536,10 +537,6 @@ class BasicParser(Parser):
     @_('LPAREN expr RPAREN')
     def expr(self, parsed):
         return parsed.expr
-
-    @_('ANSWER expr')
-    def expr(self, parsed):
-        return Expression('answer', [parsed.expr0, parsed.expr1])
 
     @_('expr PLUS expr')
     def expr(self, parsed):
