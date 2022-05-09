@@ -20,6 +20,8 @@ __banner__ = r""" (
 
 
 
+
+
 """ # __banner__
 
 class Engine: # { The Reference Implementation of BASIC++ : p-unity }
@@ -27,10 +29,13 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def __init__(self, run_tests=None):
         self.program = {}
         self.cache = {}
+        self.loops = {}
         self.lineno = 0
         self.lexer = BasicLexer()
         self.parser = BasicParser(self)
         self.running_program = False
+        self.more_variable = None
+        self.gosub_stack = collections.deque()
 
         self.eSCRPT = None
 
@@ -38,9 +43,10 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         self.eFORTH_abi = {}
 
         self.eFORTH.root.memory["__name__"] = "__main__"
+        self.eFORTH.root.memory["db"] = DBDispatch()
 
         self.connection = None
-        self.statements = None
+        self.definesql = {}
         self.cursor = None
 
     def interpret(self, line):
@@ -122,16 +128,147 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def divide(self, a, b):
         return a / b
 
-    def get_variable(self, name):
-        return self.eFORTH.root.memory.get(name.lower(), 0)
+    def fn_mul(self, a, b):
+        return a * b
 
-    def set_variable(self, name, value):
-        self.eFORTH.root.memory[name.lower()] = self.evaluate(value)
+    def fn_abs(self, a):
+        return abs(a)
+
+    def fn_len(self, a):
+        return len(a)
+
+    def fn_type(self, a):
+        return type(a)
+
+    def fn_jsonload(self, a):
+
+        def h(values):
+            if "__complex__" in values:
+                return complex(values["real"], values["imag"])
+            return values
+
+        import simplejson
+        return simplejson.loads(a, use_decimal=True, object_hook=h)
+
+    def fn_jsonsave(self, a):
+        def encode(_):
+            if isinstance(_, complex):
+                return {"__complex__": True, "real": _.real, "imag": _.imag}
+            raise TypeError(repr(_) + " is not JSON serializable")
+
+        import simplejson
+        return simplejson.dumps(a, default=encode)
+
+    def fn_jsonpath(self, obj, path):
+        from jsonpath import JSONPath
+        return JSONPath(path).parse(obj)
+
+
+    def get_variable(self, name, extra_keys=[]):
+
+        keys = []
+        parts = name.split("~")
+        keys.append(parts[0].lower())
+        for part in parts[1:]:
+            index = part
+            try:
+                index = int(part)
+            except ValueError:
+                pass
+            keys.append(index)
+        keys.extend(extra_keys)
+
+        object = self.eFORTH.root.memory
+        for key in keys[:-1]:
+            if type(object) == type([]):
+                object = object[key]
+            else:
+                object = object[key] if key in object else {}
+
+        if type(object) == type([]):
+            return object[keys[-1]]
+        else:
+            return object[keys[-1]] if keys[-1] in object else 0
+
+    def get_variable_indexed1(self, name, i0):
+        keys = [self.evaluate(i0)]
+        return self.get_variable(name, extra_keys=keys)
+
+    def get_variable_indexed2(self, name, i0, i1):
+        keys = [self.evaluate(i0),self.evaluate(i1)]
+        return self.get_variable(name, extra_keys=keys)
+
+    def get_variable_indexed3(self, name, i0, i1, i2):
+        keys = [self.evaluate(i0),self.evaluate(i1),self.evaluate(i2)]
+        return self.get_variable(name, extra_keys=keys)
+
+    def set_variable(self, name, value, value_raw=None, extra_keys=[]):
+
+        keys = []
+        parts = name.split("~")
+        keys.append(parts[0].lower())
+        for part in parts[1:]:
+            try:
+                index = int(part)
+            except ValueError:
+                index = part
+            keys.append(index)
+        keys.extend(extra_keys)
+
+        self.more_variable = keys
+
+        object = self.eFORTH.root.memory
+        for key in keys[:-1]:
+            if type(object) == type([]):
+                object = object[key]
+            else:
+                if not key in object:
+                    object[key] = {}
+                object = object[key]
+
+        object[keys[-1]] = self.evaluate(value) if value_raw == None else value_raw
+
+    def set_variable_index1(self, name, i0, value):
+        keys = [self.evaluate(i0)]
+        self.set_variable(name, value, extra_keys=keys)
+
+    def set_variable_index2(self, name, i0, i1, value):
+        keys = [self.evaluate(i0), self.evaluate(i1)]
+        self.set_variable(name, value, extra_keys=keys)
+
+    def set_variable_index3(self, name, i0, i1, i2, value):
+        keys = [self.evaluate(i0), self.evaluate(i1), self.evaluate(i2)]
+        self.set_variable(name, value, extra_keys=keys)
+
+    def set_array(self, name):
+        self.set_variable(name, None, value_raw=[])
+
+    def set_table(self, name):
+        self.set_variable(name, None, value_raw={})
+
+    def for_to_step(self, name, start, end, step):
+        loop = {"end":self.evaluate(end), "step":self.evaluate(step)}
+        loop["line"] = self.last_program_lineno + 1
+        self.loops[name.lower()] = loop
+        self.eFORTH.root.memory[name.lower()] = self.evaluate(start)
+
+    def next(self, name):
+        loop = self.loops[name.lower()]
+        curr = self.eFORTH.root.memory[name.lower()]
+        curr = curr + loop["step"]
+        self.eFORTH.root.memory[name.lower()] = curr
+        if curr <= loop["end"]:
+            self.current_program_lineno = loop["line"]
 
     def compare_variable(self, name, value):
         return -1 if self.eFORTH.root.memory[name.lower()] == value else 0
 
     def add_program_line(self, lineno, line):
+        if line[:6].lower() == "defsql":
+            statements = self.parser.parse(self.lexer.tokenize(line))
+            k, v = tuple(statements[0].arguments[0:2])
+            self.definesql[k] = v
+
         self.program[lineno] = line
 
     def remove_program_line(self, lineno):
@@ -154,9 +291,17 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
             current_line_index = linenos.index(lineno)
             self.current_program_lineno = lineno
 
+        self.last_program_lineno = 0
         while True:
             if self.current_program_lineno is not None:
-                current_line_index = linenos.index(self.current_program_lineno)
+
+                while True:
+                    try:
+                        current_line_index = linenos.index(self.current_program_lineno)
+                        break
+                    except ValueError:
+                        self.current_program_lineno += 1
+
 
             else:
                 try:
@@ -186,6 +331,20 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         else:
             self.current_program_lineno = int(expr)
 
+    def gosub(self, expr):
+        try:
+            int(expr)
+
+        except ValueError:
+            raise SyntaxError('Type mismatch error')
+
+        self.gosub_stack.append(self.last_program_lineno + 1)
+
+        self.current_program_lineno = int(expr)
+
+    def statement_return(self):
+        self.current_program_lineno = self.gosub_stack.pop()
+
     def conditional(self, expr, then_statements, else_statement=None):
         if self.evaluate(expr):
             for statement in then_statements:
@@ -196,6 +355,19 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
     def noop(self):
         pass
+
+    def more(self, *args):
+        keys = self.more_variable
+        object = self.eFORTH.root.memory
+        for key in keys[:-1]:
+            if not key in object:
+                object[key] = {}
+            object = object[key]
+
+        current = object[keys[-1]]
+        for arg in args:
+            current = current + str(self.evaluate(arg))
+        object[keys[-1]] = current
 
     def print(self, *args):
         print(*(self.evaluate(arg) for arg in args))
@@ -226,6 +398,7 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
 
         results = self.eFORTH.root.stack[depth:]
         results.reverse()
+        self.eFORTH.root.memory["stack"] = results
         index = 0
         for result in results:
             self.eFORTH.root.memory[f"f{index}"] = result
@@ -236,28 +409,40 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         for lineno, line in sorted(self.program.items()):
             print(f'{lineno} {line}')
 
+    def defsql(self, *args):
+        pass
+
     def sql(self, *args):
         arg0 = self.evaluate(args[0])
         if self.connection == None:
-            if self.statements == None:
-                if arg0.upper() == "STATEMENTS_BEGIN":
-                    self.statements = {}
-            else:
-                if arg0.upper() == "STATEMENTS_END":
-                    import sqlite3
-                    self.connection = sqlite3.connect("example.sqlite")
-                    self.cursor = self.connection.cursor()
-                else:
-                    self.statements[arg0.lower()] = self.evaluate(args[1])
-            return
+            import sqlite3
+            self.connection = sqlite3.connect("example.sqlite")
+            self.cursor = self.connection.cursor()
 
-        statement = self.statements[arg0.lower()]
+        statement = self.definesql[arg0.lower()]
         if len(args) == 1:
             self.cursor.execute(statement, self.eFORTH.root.memory)
         else:
             args = tuple((self.evaluate(arg) for arg in args[1:]))
             self.cursor.execute(statement,args)
         self.eFORTH.root.memory["s"] = self.cursor.fetchall()
+
+from p_unity.pysos import Dict
+
+class DBDispatch:
+
+    def __init__(self):
+        self.dbs = {}
+
+    def __getitem__(self, key):
+        key = key.lower()
+        if not key in self.dbs:
+            self.dbs[key] = Dict(f"db\\{key}.txt")
+        return self.dbs[key]
+
+    def __contains__(self, key):
+        return True
+
 
 import math
 import collections
@@ -274,9 +459,12 @@ class BasicLexer(Lexer):
         ID,
         REM,
         FORMAT,
+        ARRAY,
+        TABLE,
         PRINT,
         FORTH,
         SQL,
+        DEFSQL,
         IF,
         THEN,
         ELSE,
@@ -284,6 +472,8 @@ class BasicLexer(Lexer):
         RUN,
         END,
         GOTO,
+        GOSUB,
+        RETURN,
         STRING,
         SSTRING,
         RSTRING,
@@ -295,8 +485,29 @@ class BasicLexer(Lexer):
         DIVIDE,
         EQUALS,
         COLON,
+        COMMA,
+        MORE,
+
+        FOR,
+        TO,
+        IN,
+        STEP,
+        NEXT,
+
+        MUL,
+        ABS,
+
+        LEN,
+        TYPE,
+
+        JSONLOAD,
+        JSONSAVE,
+        JSONPATH,
+
         LPAREN,
-        RPAREN
+        RPAREN,
+        LBRACK,
+        RBRACK
     }
 
     ignore = ' \t\n'
@@ -310,6 +521,10 @@ class BasicLexer(Lexer):
     COLON = r':'
     LPAREN = r'\('
     RPAREN = r'\)'
+    COMMA = r','
+
+    LBRACK = r'\['
+    RBRACK = r'\]'
 
     def nocase_match(name):
         result = []
@@ -317,11 +532,16 @@ class BasicLexer(Lexer):
             result.append("[{0}{1}]".format(letter, letter.lower()))
         return r''.join(result)
 
-    REM = r"(?:[Rr][Ee][Mm]|').*"
+    REM = r"(?:[Rr][Ee][Mm]).*"
     PRINT = nocase_match("PRINT")
     FORMAT = nocase_match("FORMAT")
     FORTH = nocase_match("FORTH")
     SQL = nocase_match("SQL")
+
+    TABLE = nocase_match("TABLE")
+    ARRAY = nocase_match("ARRAY")
+
+    DEFSQL = nocase_match("DEFSQL")
     IF = nocase_match("IF")
     THEN = nocase_match("THEN")
     ELSE = nocase_match("ELSE")
@@ -329,6 +549,25 @@ class BasicLexer(Lexer):
     RUN = nocase_match("RUN")
     END = nocase_match("END")
     GOTO = nocase_match("GOTO")
+    GOSUB = nocase_match("GOSUB")
+    RETURN = nocase_match("RETURN")
+
+    FOR = nocase_match("FOR")
+    TO = nocase_match("TO")
+    IN = nocase_match("IN")
+    STEP = nocase_match("STEP")
+    NEXT = nocase_match("NEXT")
+
+    MUL = nocase_match("MUL")
+    ABS = nocase_match("ABS")
+    LEN = nocase_match("LEN")
+    TYPE = nocase_match("TYPE")
+
+    JSONLOAD = nocase_match("JSONLOAD")
+    JSONSAVE = nocase_match("JSONSAVE")
+    JSONPATH = nocase_match("JSONPATH")
+
+    MORE = nocase_match("MORE")
 
     ID = r'[A-Za-z_][A-Za-z0-9_$~!]*'
 
@@ -378,7 +617,7 @@ class BasicLexer(Lexer):
         t.value = t.value.replace(r"\v", "\v")
         return t
 
-    @_(r"~.*?(?<!\\)(\\\\)*~")
+    @_(r"\'.*?(?<!\\)(\\\\)*\'")
     def SSTRING(self, t):
         """
         Parsing strings (including escape characters)
@@ -418,12 +657,12 @@ class LineLexer(Lexer):
 
 
 class BasicParser(Parser):
-    #debugfile = 'lamb.out'
+    #debugfile = 'basic_debug.out'
     tokens = BasicLexer.tokens.union(LineLexer.tokens)
     precedence = (
-        ('nonassoc', IF, THEN),
+        ('nonassoc', IF, THEN, FOR, NEXT),
         ('left', COLON),
-        ('nonassoc', ELSE),
+        ('nonassoc', ELSE, TO),
         ('left', EQUALS),
         ('left', CREATE_EXPRS, APPEND_EXPRS),
         ('left', PLUS, MINUS),
@@ -459,10 +698,6 @@ class BasicParser(Parser):
     def statement(self, parsed):
         return Statement('add_program_line', (parsed.LINENO, parsed.LINE))
 
-    @_('LINENO')
-    def statement(self, parsed):
-        return Statement('remove_program_line', [parsed.LINENO])
-
     @_('IF expr THEN statements')
     def statement(self, parsed):
         return Statement('conditional', (parsed.expr, parsed.statements))
@@ -474,9 +709,49 @@ class BasicParser(Parser):
             (parsed.expr, parsed.statements, parsed.statement),
         )
 
+    @_('FOR variable IN expr')
+    def statement(self, parsed):
+        return Statement('for_in', (parsed.variable.name, parsed.expr0))
+
+    @_('FOR variable EQUALS expr TO expr')
+    def statement(self, parsed):
+        return Statement('for_to_step', (parsed.variable.name, parsed.expr0, parsed.expr1, 1))
+
+    @_('FOR variable EQUALS expr TO expr STEP expr')
+    def statement(self, parsed):
+        return Statement('for_to_step', (parsed.variable.name, parsed.expr0, parsed.expr1, parsed.expr2))
+
+    @_('NEXT variable')
+    def statement(self, parsed):
+        return Statement('next', (parsed.variable.name,))
+
+    @_('ARRAY variable')
+    def statement(self, parsed):
+        return Statement('set_array', (parsed.variable.name,))
+
+    @_('TABLE variable')
+    def statement(self, parsed):
+        return Statement('set_table', (parsed.variable.name,))
+
     @_('variable EQUALS expr')
     def statement(self, parsed):
         return Statement('set_variable', (parsed.variable.name, parsed.expr))
+
+    @_('variable LBRACK expr RBRACK EQUALS expr')
+    def statement(self, p):
+        return Statement('set_variable_index1', (p.variable.name, p.expr0, p.expr1))
+
+    @_('variable LBRACK expr RBRACK LBRACK expr RBRACK EQUALS expr')
+    def statement(self, p):
+        return Statement('set_variable_index2', (p.variable.name, p.expr0, p.expr1, p.expr2))
+
+    @_('variable LBRACK expr RBRACK LBRACK expr RBRACK LBRACK expr RBRACK EQUALS expr')
+    def statement(self, p):
+        return Statement('set_variable_index3', (p.variable.name, p.expr0, p.expr1, p.expr2, p.expr3))
+
+    @_('MORE exprs')
+    def statement(self, parsed):
+        return Statement('more', parsed.exprs)
 
     @_('REM')
     def statement(self, parsed):
@@ -489,6 +764,10 @@ class BasicParser(Parser):
     @_('SQL exprs')
     def statement(self, parsed):
         return Statement('sql', parsed.exprs)
+
+    @_('DEFSQL exprs')
+    def statement(self, parsed):
+        return Statement('defsql', parsed.exprs)
 
     @_('PRINT exprs')
     def statement(self, parsed):
@@ -514,14 +793,56 @@ class BasicParser(Parser):
     def statement(self, parsed):
         return Statement('goto', [parsed.expr])
 
+    @_('GOSUB expr')
+    def statement(self, parsed):
+        return Statement('gosub', [parsed.expr])
+
+    @_('RETURN')
+    def statement(self, parsed):
+        return Statement('statement_return', [])
+
     @_('expr %prec CREATE_EXPRS')
     def exprs(self, parsed):
         return [parsed.expr]
 
-    @_('exprs expr %prec APPEND_EXPRS')
+    #@_('exprs expr %prec APPEND_EXPRS')
+    #def exprs(self, parsed):
+    #    parsed.exprs.append(parsed.expr)
+    #    return parsed.exprs
+
+    @_('exprs COMMA expr %prec APPEND_EXPRS')
     def exprs(self, parsed):
         parsed.exprs.append(parsed.expr)
         return parsed.exprs
+
+
+    @_('MUL LPAREN expr COMMA expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_mul', [parsed.expr0, parsed.expr1])
+
+    @_('ABS LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_abs', [parsed.expr])
+
+    @_('LEN LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_len', [parsed.expr])
+
+    @_('TYPE LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_type', [parsed.expr])
+
+    @_('JSONLOAD LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_jsonload', [parsed.expr])
+
+    @_('JSONSAVE LPAREN expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_jsonsave', [parsed.expr])
+
+    @_('JSONPATH LPAREN expr COMMA expr RPAREN')
+    def expr(self, parsed):
+        return Expression('fn_jsonpath', [parsed.expr0, parsed.expr1])
 
     @_('variable EQUALS expr')
     def expr(self, parsed):
@@ -567,10 +888,21 @@ class BasicParser(Parser):
     def expr(self, parsed):
         return Expression('get_variable', [parsed.variable.name])
 
+    @_('variable LBRACK expr RBRACK')
+    def expr(self, p):
+        return Expression('get_variable_indexed1', [p.variable.name, p.expr])
+
+    @_('variable LBRACK expr RBRACK LBRACK expr RBRACK')
+    def expr(self, p):
+        return Expression('get_variable_indexed2', [p.variable.name, p.expr0, p.expr1])
+
+    @_('variable LBRACK expr RBRACK LBRACK expr RBRACK LBRACK expr RBRACK')
+    def expr(self, p):
+        return Expression('get_variable_indexed3', [p.variable.name, p.expr0, p.expr1, p.expr2])
+
     @_('ID')
     def variable(self, parsed):
         return Variable(parsed.ID)
-
 
     def error(self, token):
         if not token:
@@ -583,4 +915,7 @@ class BasicParser(Parser):
 import p_unity.FORTH
 
 from decimal import Decimal
+
+import copy
+
 

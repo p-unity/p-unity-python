@@ -5,7 +5,6 @@
 
 __banner__ = r""" (
 
-
          _   _            ____                _____   _____    _____
         | | (_)          |  _ \      /\      / ____| |_   _|  / ____|
    ___  | |  _           | |_) |    /  \    | (___     | |   | |
@@ -21,7 +20,9 @@ __banner__ = r""" (
 
 
 
-""" # __banner__
+
+
+"""  # __banner__
 
 class IDE: # { The p-unity IDE: Intergrated Development Environment }
 
