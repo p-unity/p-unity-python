@@ -246,13 +246,13 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
     def set_table(self, name):
         self.set_variable(name, None, value_raw={})
 
-    def for_to_step(self, name, start, end, step):
+    def control_for_to(self, name, start, end, step):
         loop = {"end":self.evaluate(end), "step":self.evaluate(step)}
         loop["line"] = self.last_program_lineno + 1
         self.loops[name.lower()] = loop
         self.eFORTH.root.memory[name.lower()] = self.evaluate(start)
 
-    def next(self, name):
+    def control_next(self, name):
         loop = self.loops[name.lower()]
         curr = self.eFORTH.root.memory[name.lower()]
         curr = curr + loop["step"]
@@ -264,6 +264,14 @@ class Engine: # { The Reference Implementation of BASIC++ : p-unity }
         return -1 if self.eFORTH.root.memory[name.lower()] == value else 0
 
     def add_program_line(self, lineno, line):
+
+        line = line.split('#', 1)[0]
+        line = line.strip()
+        if line == '':
+            return
+
+        #statements = self.parser.parse(self.lexer.tokenize(line))
+
         if line[:6].lower() == "defsql":
             statements = self.parser.parse(self.lexer.tokenize(line))
             k, v = tuple(statements[0].arguments[0:2])
@@ -711,19 +719,19 @@ class BasicParser(Parser):
 
     @_('FOR variable IN expr')
     def statement(self, parsed):
-        return Statement('for_in', (parsed.variable.name, parsed.expr0))
+        return Statement('control_for_in', (parsed.variable.name, parsed.expr0))
 
     @_('FOR variable EQUALS expr TO expr')
     def statement(self, parsed):
-        return Statement('for_to_step', (parsed.variable.name, parsed.expr0, parsed.expr1, 1))
+        return Statement('control_for_to', (parsed.variable.name, parsed.expr0, parsed.expr1, 1))
 
     @_('FOR variable EQUALS expr TO expr STEP expr')
     def statement(self, parsed):
-        return Statement('for_to_step', (parsed.variable.name, parsed.expr0, parsed.expr1, parsed.expr2))
+        return Statement('control_for_to', (parsed.variable.name, parsed.expr0, parsed.expr1, parsed.expr2))
 
     @_('NEXT variable')
     def statement(self, parsed):
-        return Statement('next', (parsed.variable.name,))
+        return Statement('control_next', (parsed.variable.name,))
 
     @_('ARRAY variable')
     def statement(self, parsed):
